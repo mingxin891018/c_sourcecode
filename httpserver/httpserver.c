@@ -117,7 +117,8 @@ int swiot_http_server_init( char* ip,short port,swiot_packet_deal_func func,void
     g_server_handle.func = func;
     g_server_handle.param = param;
     g_server_handle.exit = WORKING;
-
+	
+	log_info("init httpserver success,listen_sdk=%d\n", g_server_handle.listen_skt);
     /*rc = SWIOT_Thread_Create(g_server_handle.thread_handle,work_thread,"http_thread",1024, NULL,2 );
     if (0 == rc)
     {
@@ -509,7 +510,7 @@ int swiot_accept()
     int skt = -1;
 
     ZERO_SANITY_CHECK(g_server_handle.listen_skt,-1);
-
+	
     skt = SWIOT_Accept(g_server_handle.listen_skt,NULL,NULL);
 
     if(0 <= skt)

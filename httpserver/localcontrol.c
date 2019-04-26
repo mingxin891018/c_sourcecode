@@ -73,6 +73,8 @@ int SWIOT_LC_Construct(char* sn)
         log_error("Create thread error\n");
         goto ERROR;
     }
+	log_info("Create work_thread lc_thread success!\n");
+	sleep(180);
 
     return 0;
 ERROR:

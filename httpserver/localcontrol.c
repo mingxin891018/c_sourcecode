@@ -4,9 +4,6 @@
 #include "udpcast.h"
 #include "cJSON.h"
 
-#include "sw_common.h"
-
-
 #define TCP_LISTEN_IP   "0.0.0.0"
 #define TCP_LISTEN_PORT 4004
 
@@ -30,7 +27,8 @@ typedef struct
 {
     swiot_lccmd_callback cmd_callback;
     void* callback_param;
-    void*                  thread_handle;
+    //void*                  thread_handle;
+    pthread_t                  thread_handle;
     int status;
 } swiot_lchandle_t;
 
@@ -40,9 +38,9 @@ void http_packet_handle( void* client,char* method,char* uri,char* palyload,int 
 lc_controy_e get_cmd_type(char*method,char*uri);
 char* get_cmd_msg(char* data,int data_size);
 
-void work_threadlc(void *params);
+void *work_threadlc(void *params);
 
-xTaskHandle lc_xHandle;
+//xTaskHandle lc_xHandle;
 
 /**
 * @本地控制初始化
@@ -69,21 +67,12 @@ int SWIOT_LC_Construct(char* sn)
 
     g_lc_handle.status = LCWORKING;
 
-    #if 0//by peter
-    rc = xTaskCreate(work_threadlc, "work_threadlc", 1024, NULL, tskIDLE_PRIORITY + 2, &lc_xHandle);
-    if (rc != pdPASS)
-    {
-        log_error("Create thread error\n");
-        goto ERROR;
-    }
-    #else //by swiot
     rc = SWIOT_Thread_Create(g_lc_handle.thread_handle,work_threadlc,"lc_thread",WORK_THREAD_STACK_SIZE, NULL,125);
     if (0 == rc)
     {
         log_error("Create thread error\n");
         goto ERROR;
     }
-    #endif
 
     return 0;
 ERROR:
@@ -112,7 +101,7 @@ int my_swiot_lccmd_callback(lc_controy_e cmd_type,void* cmd_handle,int cmd_id,ch
     printf(" cmd_type = %d\n",cmd_type);
     printf(" cmd_id = %d\n",cmd_id);
     printf(" cmd = %s\n",cmd);
-    printf(" param = %s\n",param);
+    printf(" param = %s\n",(char *)param);
     printf("\n\n");
 }
 
@@ -141,8 +130,8 @@ int SWIOT_LC_Response(void* cmd_handle,int cmd_id,int code,char* data,int data_s
     return swiot_http_server_response(cmd_handle,cmd_id,code,data,data_size);
 }
 
-extern xSemaphoreHandle key_press_sem;
-extern dev_st G_dev_info;
+//extern xSemaphoreHandle key_press_sem;
+//extern dev_st G_dev_info;
 
 void http_packet_handle( void* client,char* method,char* uri,char* palyload,int head_len,int size,int session_id,void* param )
 {
@@ -171,32 +160,6 @@ void http_packet_handle( void* client,char* method,char* uri,char* palyload,int 
         SWIOT_LC_Response(client,session_id,404,NULL,0);
         return;
     }
-    #if 1//by peter
-    cJSON* json = NULL;
-
-    json = cJSON_Parse(cmd);
-    if(json)
-    {
-        cJSON* json_switch = NULL;
-
-        json_switch = cJSON_GetObjectItem(json,"switch");
-        if(json_switch && json_switch->type == cJSON_Number)
-        {
-            printf("switch = %d\n",json_switch->valueint);
-
-            if(json_switch->valueint != G_dev_info.dev_state.powerSwitch)
-            {
-                xSemaphoreGive(key_press_sem);//
-            }
-
-            SWIOT_LC_Response(client,session_id,200,NULL,0);//回复ok
-        }
-    }
-
-    if(json)
-        cJSON_Delete(json);
-
-    #endif
 
     if(g_lc_handle.cmd_callback)
     {
@@ -302,7 +265,7 @@ END:
     return str;
 }
 
-void  work_threadlc(void *params)
+void *work_threadlc(void *params)
 {
     int now = 0;
     static char buf[128] = {0};
@@ -317,10 +280,18 @@ void  work_threadlc(void *params)
 
         swiot_udpcast_ontimer(now);
 
-        //SWIOT_msleep(1);
-        vTaskDelay(100 / portTICK_RATE_MS);
+        SWIOT_msleep(1);
     }
-
-    //vTaskDelete(NULL);
+	return NULL;
 }
+
+
+#if 1
+
+void main(void)
+{
+	SWIOT_LC_Construct("AA:BB:CC:DD:EE:FF");
+}
+#endif
+
 

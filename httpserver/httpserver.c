@@ -1,3 +1,10 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <errno.h>
+#include <unistd.h>
+#include <fcntl.h>
+
 #include <netinet/in.h>
 #include <netinet/ip.h> /* superset of previous */
 
@@ -676,7 +683,7 @@ void swiot_handle(int now)
         SWIOT_Mutex_Unlock(g_server_handle.mutex);
 
         swiot_parser_packet(client);
-        //log_debug("Get client,skt=%d read_datasize=%d write_datasize=%d\n",client->skt,client->read_datasize,client->write_datasize);
+        log_debug("Get client,skt=%d read_datasize=%d write_datasize=%d\n",client->skt,client->read_datasize,client->write_datasize);
     }
 }
 
@@ -740,9 +747,9 @@ void swiot_parser_packet(client_info_t* client)
         if (g_server_handle.func)
             g_server_handle.func((void*)client,method,uri,client->read_buf,client->hlen,packet_size,session_id,g_server_handle.param);
 
-        log_debug("Get packet,packet_size=%d,data_size=%d read_bufsize\n",packet_size,client->read_datasize,client->read_bufsize);
+        log_debug("Get packet,packet_size=%d,data_size=%d read_bufsize=%d\n",packet_size,client->read_datasize,client->read_bufsize);
         client->read_datasize -= packet_size;
-        log_debug("Get packet,packet_size=%d,data_size=%d read_bufsize\n",packet_size,client->read_datasize,client->read_bufsize);
+        log_debug("Get packet,packet_size=%d,data_size=%d read_bufsize=%d\n",packet_size,client->read_datasize,client->read_bufsize);
         memmove(client->read_buf,client->read_buf + packet_size,client->read_datasize );
         client->clen = client->hlen = -1;
     }

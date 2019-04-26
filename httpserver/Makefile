@@ -1,4 +1,5 @@
 CFLAGS+=-lpthread -Wall
+CFLAGS+=-lm
 LDFLAGS=-I./
 
 BIN=main
@@ -17,17 +18,5 @@ $(BIN):$(OBJ_C)
 
 
 clean:
-	rm -rf $(OBJ_C) $(BIN)  
-
-
-
-
-
-
-
-
-
-
-
-
+	rm -rf $(OBJ_C) $(BIN)
 

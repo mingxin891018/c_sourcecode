@@ -1,16 +1,17 @@
 #ifndef __SWIOT_PLATFORM_H__
 #define __SWIOT_PLATFORM_H__
 
-#include "swiot_common.h"
-#if 0
-#include <errno.h>
 #include <sys/socket.h>
-#include<netinet/in.h>>
-#include <pthread.h>
-#include<fcntl.h>
-#endif
+#include <netinet/in.h>
+#include <fcntl.h>
+#include <unistd.h>
 
-//#include<unistd.h>
+#include <arpa/inet.h>
+
+#include <pthread.h>
+#include <errno.h>
+
+#include "swiot_common.h"
 
 #define SWIOT_Malloc   malloc
 #define SWIOT_Memset   memset
@@ -18,14 +19,14 @@
 #define SWIOT_htons(x) htons(x)
 
 #define SWIOT_Thread_Create( handle,callTask,threadName,stack_size,parameters, priority ) ((0==pthread_create(&handle, NULL, callTask, parameters))?1:0)
-//#define SWIOT_Thread_Destroy(handle) (pthread_join(handle,NULL))
+#define SWIOT_Thread_Destroy(handle) (pthread_join(handle,NULL))
 
-//#define SWIOT_msleep(time)    os_//usleep((time) * 1000)
+#define SWIOT_msleep(time)    usleep((time*1000))
 
-//#define SWIOT_Get_Time()    time(NULL)
+#define SWIOT_Get_Time()    time(NULL)
 #define SWIOT_Inet_Addr     inet_addr
 #define SWIOT_Select        select
-//#define SWIOT_GethostByName gethostbyname
+#define SWIOT_GethostByName gethostbyname
 
 void* SWIOT_Mutex_Create();
 void SWIOT_Mutex_Destroy( void* mutex );

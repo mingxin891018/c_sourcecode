@@ -33,24 +33,24 @@
 
 #define log_error(format,...)           do {  \
                                             if(LOG_LEVEL <= LOG_ERROR) {  \
-                                                SWDEBUG("[E][%s][%s][%d]"format,__FILE__,__FUNCTION__,__LINE__,##__VA_ARGS__);  \
+                                                SWDEBUG("[E][%s %s %d] "format,__FILE__,__FUNCTION__,__LINE__,##__VA_ARGS__);  \
                                             }  \
                                         } while(0);
 #define log_warn(format, ...)           do {  \
                                             if(LOG_LEVEL <= LOG_WARN) {  \
-                                                SWDEBUG("[W][%s][%s][%d]"format,__FILE__,__FUNCTION__,__LINE__,##__VA_ARGS__);  \
+                                                SWDEBUG("[W][%s %s %d] "format,__FILE__,__FUNCTION__,__LINE__,##__VA_ARGS__);  \
                                             }  \
                                         } while(0);
 
 #define log_info(format, ...)           do {  \
                                             if(LOG_LEVEL <= LOG_INFO) {  \
-                                                SWDEBUG("[I][%s][%s][%d]"format,__FILE__,__FUNCTION__,__LINE__,##__VA_ARGS__);  \
+                                                SWDEBUG("[I][%s %s %d] "format,__FILE__,__FUNCTION__,__LINE__,##__VA_ARGS__);  \
                                             }  \
                                         } while(0);
 
 #define log_debug(format, ...)          do {  \
                                             if(LOG_LEVEL <= LOG_DEBUG) {  \
-                                                SWDEBUG("[D][%s][%s][%d]"format,__FILE__,__FUNCTION__,__LINE__,##__VA_ARGS__);  \
+                                                SWDEBUG("[D][%s %s %d] "format,__FILE__,__FUNCTION__,__LINE__,##__VA_ARGS__);  \
                                             }  \
                                         } while(0);
 

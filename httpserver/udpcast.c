@@ -1,10 +1,19 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <errno.h>
+#include <unistd.h>
+#include <fcntl.h>
+
+#include <netinet/in.h>
+#include <netinet/ip.h> /* superset of previous */
+
+#include <sys/types.h>          /* See NOTES */
+#include <sys/socket.h>
+
 #include "udpcast.h"
 #include "swiot_common.h"
 #include "swiot_platform.h"
-#include "lwip/mem.h"
-#include "lwip/sockets.h"
-#include "lwip/inet.h"
-
 
 #define UDPCAST_INTERAL 10000
 

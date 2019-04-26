@@ -1,9 +1,4 @@
 #include "swiot_common.h"
-//#include "utils_hmac.h"
-#include "lwip/sockets.h"
-#include "lwip/inet.h"
-#include "lwip/netdb.h"
-#include "lwip/sys.h"
 
 int url_get_httpresp(int httpstatus, int sessionid, int content_length, char *respbuf, int bufsize)
 {

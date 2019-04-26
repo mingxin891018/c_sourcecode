@@ -1,0 +1,43 @@
+#数据存放到system表中
+[system]
+volume_system=8
+time_12_24=12
+volume_music_speaker=8
+name=sunniwell
+name1=hello world
+name2=hello world
+name3=hello world
+zhao=hello world
+#数据存放到secure表中
+[secure]
+Speed_TestUrl=http://www.lycatv.tv/android_box/Speed_Test.MP4
+spell_checker_enabled=0
+default_input_method=com.hisilicon.android.inputmethod.remote/.RemoteIME
+isEncryptMark=1
+cpe_firstusedate=0000-00-00T00:00:00
+audiorender=1
+stb_device_name=My Lyca TV Box
+manager_password=22c7a29b0aa2bdf467aa4df87744018f
+network_mode=double
+timeFormat=12
+#数据存放到global表中 
+[global]
+package_verifier_enable=0
+auto_time=0
+auto_time_zone=0
+install_non_market_apps=1
+adb_enabled=0
+device_provisioned=1
+
+
+
+
+
+
+
+
+
+
+
+
+

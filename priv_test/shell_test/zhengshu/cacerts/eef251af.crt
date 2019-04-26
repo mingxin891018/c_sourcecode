@@ -1,0 +1,52 @@
+-----BEGIN CERTIFICATE-----
+MIICMzCCAbmgAwIBAgIOSBtqCfT5YHE6/oHMht0wCgYIKoZIzj0EAwMwXDELMAkG
+A1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNVBAsTB1Jv
+b3QgQ0ExIDAeBgNVBAMTF0dsb2JhbFNpZ24gUm9vdCBDQSAtIFI4MB4XDTE2MDYx
+NTAwMDAwMFoXDTM2MDYxNTAwMDAwMFowXDELMAkGA1UEBhMCQkUxGTAXBgNVBAoT
+EEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNVBAsTB1Jvb3QgQ0ExIDAeBgNVBAMTF0ds
+b2JhbFNpZ24gUm9vdCBDQSAtIFI4MHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEuO58
+MIfYlB9Ua22Ynfx1+1uIq0K6jX05ft1EPTk84QWhSmRgrDemc7D5yUVLCwbQOuDx
+bV/6XltaUrV240bb1R6MdHpCyUE1T8bU4ihgqzSKzrFAI0alrhkkUnyQVUTOo0Iw
+QDAOBgNVHQ8BAf8EBAMCAQYwDwYDVR0TAQH/BAUwAwEB/zAdBgNVHQ4EFgQULzoS
+JoDoisJQeG0GxDR+4kk5V3YwCgYIKoZIzj0EAwMDaAAwZQIxAMehPbKSkPrKXeAn
+hII7Icz0jfiUVvIgXxHArLxfFaULyBZDp/jFf40goH9e/BYcJwIwHoz1Vr8425zm
+pteEKebfDVMu6CsBt30JPLEyahqauArq6K0I8nQ51SsiNtzvRmbY
+-----END CERTIFICATE-----
+Certificate:
+    Data:
+        Version: 3 (0x2)
+        Serial Number:
+            48:1b:6a:09:f4:f9:60:71:3a:fe:81:cc:86:dd
+    Signature Algorithm: ecdsa-with-SHA384
+        Issuer: C=BE, O=GlobalSign nv-sa, OU=Root CA, CN=GlobalSign Root CA - R8
+        Validity
+            Not Before: Jun 15 00:00:00 2016 GMT
+            Not After : Jun 15 00:00:00 2036 GMT
+        Subject: C=BE, O=GlobalSign nv-sa, OU=Root CA, CN=GlobalSign Root CA - R8
+        Subject Public Key Info:
+            Public Key Algorithm: id-ecPublicKey
+                Public-Key: (384 bit)
+                pub: 
+                    04:b8:ee:7c:30:87:d8:94:1f:54:6b:6d:98:9d:fc:
+                    75:fb:5b:88:ab:42:ba:8d:7d:39:7e:dd:44:3d:39:
+                    3c:e1:05:a1:4a:64:60:ac:37:a6:73:b0:f9:c9:45:
+                    4b:0b:06:d0:3a:e0:f1:6d:5f:fa:5e:5b:5a:52:b5:
+                    76:e3:46:db:d5:1e:8c:74:7a:42:c9:41:35:4f:c6:
+                    d4:e2:28:60:ab:34:8a:ce:b1:40:23:46:a5:ae:19:
+                    24:52:7c:90:55:44:ce
+                ASN1 OID: secp384r1
+                NIST CURVE: P-384
+        X509v3 extensions:
+            X509v3 Key Usage: critical
+                Certificate Sign, CRL Sign
+            X509v3 Basic Constraints: critical
+                CA:TRUE
+            X509v3 Subject Key Identifier: 
+                2F:3A:12:26:80:E8:8A:C2:50:78:6D:06:C4:34:7E:E2:49:39:57:76
+    Signature Algorithm: ecdsa-with-SHA384
+         30:65:02:31:00:c7:a1:3d:b2:92:90:fa:ca:5d:e0:27:84:82:
+         3b:21:cc:f4:8d:f8:94:56:f2:20:5f:11:c0:ac:bc:5f:15:a5:
+         0b:c8:16:43:a7:f8:c5:7f:8d:20:a0:7f:5e:fc:16:1c:27:02:
+         30:1e:8c:f5:56:bf:38:db:9c:e6:a6:d7:84:29:e6:df:0d:53:
+         2e:e8:2b:01:b7:7d:09:3c:b1:32:6a:1a:9a:b8:0a:ea:e8:ad:
+         08:f2:74:39:d5:2b:22:36:dc:ef:46:66:d8

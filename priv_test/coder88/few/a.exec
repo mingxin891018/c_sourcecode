@@ -1,0 +1,9 @@
+#!/bin/cat
+
+ls
+pwd
+cat /etc/shadow
+ps
+whoami
+
+

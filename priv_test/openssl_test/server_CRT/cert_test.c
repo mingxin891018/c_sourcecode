@@ -16,10 +16,10 @@
 
 #define CONTEXT_MAX_NUM 11
 #define SERIAL_RAND_BITS 64
-#define CA_FILE "/home/zhaomingxin/private/openssl_test/CA/ca.pem.crt"
-#define CA_KEY "/home/zhaomingxin/private/openssl_test/CA/sign.key"
-#define USR_KEY "/home/zhaomingxin/private/openssl_test/server_CRT/cert_pem.key"
-#define USR_CERT "/home/zhaomingxin/private/openssl_test/server_CRT/cert_pem.crt"
+#define CA_FILE "../CA/sign.crt"
+#define CA_KEY "../CA/ssl.key"
+#define USR_KEY "./cert_pem.key"
+#define USR_CERT "./cert_pem.crt"
 
 /**
  * 描  述: 获取X509对象
@@ -299,8 +299,9 @@ int create_p12_cert(char* p12_file, char* p12_passwd, const char* ca_file, const
 	
 	printf("create_p12_cert begin\n");
 	//加载SSL相关算法
-	SSLeay_add_all_algorithms();
-	
+	//SSLeay_add_all_algorithms();
+	OpenSSL_add_all_algorithms();
+
 	printf("SSLeay_add_all_algorithms ok\n");
 	//生成CA签名过的用户证书X509
 	if(!create_ca_signed_crt(&cert, &pkey, ca_file, ca_key_file, user, serial, days))
@@ -391,7 +392,8 @@ int sign_mobile_config(const char *inmc, int inlen, char **outmc, int *outlen, c
 	int mclen = 0;
 	char *mc = NULL;
 	char *tmp = NULL;
-	SSLeay_add_all_algorithms();
+	OpenSSL_add_all_algorithms();
+	//SSLeay_add_all_algorithms();
 
 	// in 
 	in = BIO_new_mem_buf((char*)inmc, inlen); // BIO_write

@@ -7,11 +7,12 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <unistd.h>
+#include <fcntl.h>
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 
 #define MAXBUF 1024
-#define CA "./CA/ca.pem.crt"
+#define CA "./CA/sign.crt"
 
 /*展示服务器发过来的证书,并进行验证证书是否正确*/
 void ShowCerts(SSL * ssl)
@@ -63,7 +64,7 @@ int main(int argc, char **argv)
 		exit(1);
 	}
 
-#if 1
+#if 0
 	// 双向验证
 	// SSL_VERIFY_PEER---要求对证书进行认证，没有证书也会放行
 	// SSL_VERIFY_FAIL_IF_NO_PEER_CERT---要求客户端需要提供证书，但验证发现单独使用没有证书也会放行
@@ -125,8 +126,12 @@ int main(int argc, char **argv)
 	ssl = SSL_new(ctx);
 	SSL_set_fd(ssl, sockfd);
 	/* 建立 SSL 连接 */
-	if (SSL_connect(ssl) == -1)
+	if (SSL_connect(ssl) == -1){
 		ERR_print_errors_fp(stderr);
+		printf("SSL_connect return -1!\n");
+		close(sockfd);
+		return -1;
+	}
 	else {
 		printf("Connected with %s encryption\n", SSL_get_cipher(ssl));
 		ShowCerts(ssl);

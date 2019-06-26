@@ -16,10 +16,10 @@
 
 #define CONTEXT_MAX_NUM 11
 #define SERIAL_RAND_BITS 64
-#define CA_FILE "/home/zhaomingxin/private/openssl_test/CA/ca.pem.crt"
-#define CA_KEY "/home/zhaomingxin/private/openssl_test/CA/sign.key"
-#define USR_KEY "/home/zhaomingxin/private/openssl_test/client_CRT/cert_pem.key"
-#define USR_CERT "/home/zhaomingxin/private/openssl_test/client_CRT/cert_pem.crt"
+#define CA_FILE "../CA/sign.crt"
+#define CA_KEY "../CA/ssl.key"
+#define USR_KEY "./cert_pem.key"
+#define USR_CERT "./cert_pem.crt"
 
 /**
  * 描  述: 获取X509对象
@@ -86,14 +86,14 @@ EVP_PKEY *read_private_key(const char* key_file)
 	FILE *fp = fopen(key_file, "r");
 	if(!fp)
 	{
-		printf("read_private_key, open key failed!");
+		printf("read_private_key, open key failed!\n");
 		return NULL;
 	}
 	pkey = PEM_read_PrivateKey(fp, NULL, 0, NULL);
 	fclose(fp);
 	if (pkey == NULL)
 	{
-		printf("read_private_key, get key failed!");
+		printf("read_private_key, get key failed!\n");
 	}
 	return pkey;
 }
@@ -198,28 +198,36 @@ int create_ca_signed_crt(X509** x509p, EVP_PKEY** pkey, const char* ca_file, con
 	//生成用户证书的RSA密钥对
 	if(!create_client_key(&pk, 2048))
 	{
-		printf("create_ca_signed_crt, gen key failed!");
+		printf("create_ca_signed_crt, gen key failed!\n");
 		goto err;
 	}
 	if((x = X509_new()) == NULL)
 	{
-		printf("create_ca_signed_crt, gen x509 failed!");
+		printf("create_ca_signed_crt, gen x509 failed!\n");
 		goto err;
 	}
 	
 	//读取CA证书及密钥并验证密钥
 	xca = read_public_cert(ca_file);
+	if(xca == NULL){
+		printf("read CA cst failed!\n");
+		goto err;
+	}
 	xca_key = read_private_key(ca_key_file);
+	if(xca_key == NULL){
+		printf("read CA key failed!\n");
+		goto err;
+	}
 	if(!X509_check_private_key(xca, xca_key))
 	{
-		printf("create_ca_signed_crt, check ca %s and key %s failed!", ca_file, ca_key_file);
+		printf("create_ca_signed_crt, check ca %s and key %s failed!\n", ca_file, ca_key_file);
 		goto err;
 	}
 
 	//设置被签名的CA机构
 	if(!X509_set_issuer_name(x, X509_get_subject_name(xca)))
 	{
-		printf("create_ca_signed_crt, set issuer failed!");
+		printf("create_ca_signed_crt, set issuer failed!\n");
 		goto err;
 	}
 
@@ -229,19 +237,19 @@ int create_ca_signed_crt(X509** x509p, EVP_PKEY** pkey, const char* ca_file, con
 	//设置证书有效期
 	if(X509_gmtime_adj(X509_get_notBefore(x), 0L) == NULL)
 	{
-		printf("create_ca_signed_crt, set cert begin time failed!");
+		printf("create_ca_signed_crt, set cert begin time failed!\n");
 		goto err;
 	}
 	if(X509_gmtime_adj(X509_get_notAfter(x), (long)60*60*24*days) == NULL)
 	{
-		printf("create_ca_signed_crt, set cert expired time failed!");
+		printf("create_ca_signed_crt, set cert expired time failed!\n");
 		goto err;
 	}
 
 	//设置证书使用的公钥
 	if(!X509_set_pubkey(x, pk))
 	{
-		printf("create_ca_signed_crt, set pubkey failed!");
+		printf("create_ca_signed_crt, set pubkey failed!\n");
 		goto err;
 	}
 
@@ -253,14 +261,14 @@ int create_ca_signed_crt(X509** x509p, EVP_PKEY** pkey, const char* ca_file, con
 	name = X509_get_subject_name(x);
 	if(!add_cert_ctx(name, ctx, CONTEXT_MAX_NUM))
 	{
-		printf("create_ca_signed_crt, add entry failed!");
+		printf("create_ca_signed_crt, add entry failed!\n");
 		goto err;
 	}
 	
 	//用CA证书给用户证书签名
 	if(!X509_sign(x, xca_key, EVP_sha1()))
 	{
-		printf("create_ca_signed_crt, sign cert failed!");
+		printf("create_ca_signed_crt, sign cert failed!\n");
 		goto err;
 	}
 	*pkey = pk;
@@ -271,8 +279,10 @@ err:
 		X509_free(x);
 	if(pk)
 		EVP_PKEY_free(pk);
-	if(rsa)
-		RSA_free(rsa);
+	if(xca)
+		X509_free(xca);
+	if(xca_key)
+		EVP_PKEY_free(xca_key);
 	return 0;
 }
 
@@ -299,8 +309,8 @@ int create_p12_cert(char* p12_file, char* p12_passwd, const char* ca_file, const
 	
 	printf("create_p12_cert begin\n");
 	//加载SSL相关算法
-	SSLeay_add_all_algorithms();
-	
+	//SSLeay_add_all_algorithms();
+	OpenSSL_add_all_algorithms();
 	printf("SSLeay_add_all_algorithms ok\n");
 	//生成CA签名过的用户证书X509
 	if(!create_ca_signed_crt(&cert, &pkey, ca_file, ca_key_file, user, serial, days))
@@ -391,8 +401,8 @@ int sign_mobile_config(const char *inmc, int inlen, char **outmc, int *outlen, c
 	int mclen = 0;
 	char *mc = NULL;
 	char *tmp = NULL;
-	SSLeay_add_all_algorithms();
-
+	//SSLeay_add_all_algorithms();
+	OpenSSL_add_all_algorithms();
 	// in 
 	in = BIO_new_mem_buf((char*)inmc, inlen); // BIO_write
 	if (!in)

@@ -1,6 +1,6 @@
 all:
-	gcc -o ssl_twoway_client ssl_twoway_client.c -Wall -g -lssl
-	gcc -o ssl_twoway_server ssl_twoway_server.c -Wall -g -lssl
+	gcc -o ssl_twoway_client ssl_twoway_client.c -Wall -g -lssl -lcrypto -lpthread
+	gcc -o ssl_twoway_server ssl_twoway_server.c -Wall -g -lssl -lcrypto -lpthread
 
 
 clean:

@@ -1,5 +1,5 @@
 all:
-	cc cert_test.c -o cert_test -lssl -lcrypto
+	gcc -o cert_test cert_test.c -Wall -g -lssl -lcrypto -lpthread
 
 clean:
 	rm -rf cert_test *.crt *.key

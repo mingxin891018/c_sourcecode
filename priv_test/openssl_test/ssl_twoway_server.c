@@ -15,7 +15,10 @@
 #define CA "./CA/sign.crt"
 
 #define INFO(format,...)      printf("[INFO/%s %s %d] "format,__FILE__,__FUNCTION__,__LINE__,##__VA_ARGS__)
+/*
+	编译后运行命令: ./ssl_twoway_server 7838  5 server_CRT/cert_pem.crt  server_CRT/cert_pem.key
 
+*/
 /*展示client端发过来的证书,用于服务器验证client合法性*/
 void ShowCerts(SSL * ssl)
 {

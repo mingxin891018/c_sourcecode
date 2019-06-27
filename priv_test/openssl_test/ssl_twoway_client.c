@@ -13,7 +13,9 @@
 
 #define MAXBUF 1024
 #define CA "./CA/sign.crt"
-
+/*
+	编译之后运行命令: ./ssl_twoway_client 127.0.0.1 7838 client_CRT/cert_pem.crt  client_CRT/cert_pem.key
+*/
 /*展示服务器发过来的证书,并进行验证证书是否正确*/
 void ShowCerts(SSL * ssl)
 {

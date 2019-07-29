@@ -1,0 +1,8 @@
+progress_step:=1
+	steps = $(shell expr $(progress_step) + 5)
+	progress_step := $(steps)
+	echo "steps=$(steps)"
+
+
+all:
+	@echo "steps=$(steps)"

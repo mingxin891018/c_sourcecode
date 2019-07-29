@@ -1,0 +1,10 @@
+file=./tcpdump.sh
+hide=@
+all:
+	$(hide) size=`ls -l $(file) | awk '{print $$5;}'`;\
+	if [ $$size -ge 170 ]; \
+	then echo "1size=$$size"; \
+	exit 2; \
+	else echo "2size=$$size";\
+	fi ;
+	$(hide) echo 3size=$(size)

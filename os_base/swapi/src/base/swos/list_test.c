@@ -1,7 +1,7 @@
 #include <stdio.h> 
 #include <stdlib.h>
 #include <string.h>
-#include "mylist.h" 
+#include "list_head.h" 
 
 struct person 
 { 

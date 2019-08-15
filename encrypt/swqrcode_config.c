@@ -1,8 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "swapi.h"
-#include "swapp_priv.h"
 
 #define CHECK_PARAM(handle)    \
 		do  \
@@ -12,6 +10,28 @@
 		}while(0)
 
 #define INFO_MAX 512
+
+#define LOG_DEBUG   0
+#define LOG_INFO    1
+#define LOG_WARN    2
+#define LOG_ERROR   3
+#define LOG_NONE    4
+
+//设置日志级别
+#define LOG_LEVEL LOG_DEBUG
+
+#define SW_APP_LOG_DEBUG(format,...)   do { \
+	if(LOG_LEVEL <= LOG_DEBUG) { \
+		printf("[D/%s:%d] "format, __FUNCTION__, __LINE__, ##__VA_ARGS__); \
+	} \
+} while(0);
+
+#define SW_APP_LOG_ERROR(format,...)   do { \
+	if(LOG_LEVEL <= LOG_ERROR) { \
+		printf("[E/%s:%d] "format, __FUNCTION__, __LINE__, ##__VA_ARGS__); \
+	} \
+} while(0);
+
 
 typedef struct sw_qrcode_info_ {
 	char K1[INFO_MAX];
@@ -196,7 +216,7 @@ sw_qrcode_info_t *sw_swqrcode_analysis(unsigned char *qrcode, unsigned char *key
 	info->K2_len = k2_len;
 	memcpy(info->K1, qrcode, k1_len);
 	memcpy(info->K2, p + 1, k2_len);
-	SW_APP_LOG_DEBUG("K1=%s\nK2=%s\n", info->K1, info->K2);
+	SW_APP_LOG_DEBUG("K1=%s,K2=%s\n", info->K1, info->K2);
 
 	DecodeBase64T(info->K1, strlen(info->K1), 0, &p);
 	info->ssid = p;
@@ -284,10 +304,10 @@ void sw_swqrcode_free(sw_qrcode_info_t *info)
 		free(info);
 	}
 }
-/*
+#if 1
 void main(void)
 {
 	sw_swqrcode_analysis("RVpWSVotQUIxLUFRN1Y=|VT0wNzUyMD4wPjNKPEM3SzJEQw==", "3ANBB231722NEDK");
 
 }
-*/
+#endif

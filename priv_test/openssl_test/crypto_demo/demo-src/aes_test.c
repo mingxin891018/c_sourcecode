@@ -44,7 +44,7 @@ unsigned char *padding(const unsigned char *src, size_t src_len, size_t *out_len
 	return p;
 }
 
-void bin_print(const char *data, size_t len)
+void bin_print(const unsigned char *data, size_t len)
 {
 	size_t i;
 	printf("BIN DATA LEN=%zu,DATA:\n", len);
@@ -54,7 +54,7 @@ void bin_print(const char *data, size_t len)
 }
 
 //加密任意长度的数据,返回值为加解密之后数据的长度
-unsigned char *AES128_CBC_CS5_encrypt(const unsigned char *in, size_t len, size_t *out_len, const char *key, unsigned char *iv)
+unsigned char *AES128_CBC_CS5_encrypt(const unsigned char *in, size_t len, size_t *out_len, const unsigned char *key, unsigned char *iv)
 {
 	AES_KEY aes;
 	unsigned char *plaintext = NULL, *p = NULL;
@@ -103,7 +103,7 @@ end:
 }
 
 //解密任意长度的数据,返回值为加解密之后数据的长度
-unsigned char *AES128_CBC_CS5_decrypt(const unsigned char *in, size_t len, size_t *out_len, const char *key, unsigned char *iv)
+unsigned char *AES128_CBC_CS5_decrypt(const unsigned char *in, size_t len, size_t *out_len, const unsigned char *key, unsigned char *iv)
 {
 	AES_KEY aes;
 	unsigned char *p = NULL;
@@ -160,18 +160,18 @@ end:
 	return NULL;
 }
 
-void main()
+int main(int argc, char *argv[])
 {
 	size_t ciphertext_len = 0, plaintext_len = 0;
 	unsigned char *ciphertext = NULL, *plaintext = NULL;
 	char *data = "helloworld zhaomingxin";
 	char *key = "abcdefghijklmnop";
-	char iv[32] = "0123456789abcdef";
+	unsigned char iv[32] = "0123456789abcdef";
 
 	printf("data= %s\n", data);
 	printf("key = %s\n", key);
 	printf("iv  = %s\n\n", iv);
-	ciphertext = AES128_CBC_CS5_encrypt(data, strlen(data), &ciphertext_len, key, iv);
+	ciphertext = AES128_CBC_CS5_encrypt((const unsigned char *)data, strlen(data), &ciphertext_len, (const unsigned char *)key, iv);
 	if(ciphertext == NULL)
 		goto end;
 	printf("=========================================================\n");
@@ -180,8 +180,8 @@ void main()
 	printf("=========================================================\n");
 
 	printf("\n\n");
-	char iv1[32] = "0123456789abcdef";
-	plaintext = AES128_CBC_CS5_decrypt(ciphertext, ciphertext_len, &plaintext_len, key, iv1);
+	unsigned char iv1[32] = "0123456789abcdef";
+	plaintext = AES128_CBC_CS5_decrypt((const unsigned char *)ciphertext, ciphertext_len, &plaintext_len, (const unsigned char *)key, iv1);
 	if(plaintext == NULL)
 		goto end;
 	log_info("dec success,plaintext_len=%ld\n", plaintext_len);
@@ -195,6 +195,7 @@ end:
 		free(ciphertext);
 	if(plaintext)
 		free(plaintext);
+	return 0;
 }
 
 

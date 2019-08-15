@@ -3,3 +3,4 @@ all:
 
 clean:
 	make -C swapi
+	rm -rf out

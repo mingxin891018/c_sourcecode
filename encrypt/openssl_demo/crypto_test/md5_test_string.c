@@ -32,7 +32,6 @@ void tDigest ()
 }
 int main()
 {
-	OpenSSL_add_all_algorithms();
 	tDigest() ;
 	return 0;
 }

@@ -5,3 +5,6 @@
 	make
 	make install
 
+运行环境：
+	export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$(pwd)/openssl-lib/lib
+

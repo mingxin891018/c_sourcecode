@@ -142,11 +142,15 @@ static int create_key(const char *path)
 	}
 	/* 获取对方公钥，不能直接引用 */
 	pubkey2 = EC_KEY_get0_public_key(key2);
+	
 	/* 生成一方的共享密钥 */
 	len1= ECDH_compute_key(shareKey1, 128, pubkey2, key1, NULL);
+	bin_print((const unsigned char *)shareKey1, len1);
 	pubkey1 = EC_KEY_get0_public_key(key1);
+	
 	/* 生成另一方共享密钥 */
 	len2= ECDH_compute_key(shareKey2, 128, pubkey1, key2, NULL);
+	bin_print((const unsigned char *)shareKey2, len2);
 	if(len1!=len2)
 	{
 		printf("err\n");

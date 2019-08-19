@@ -4,7 +4,7 @@ INDIR += \
 DYN_LDS_WITH += \
 -L../openssl-lib/lib/ -lcrypto
 
-.PHONY:all aes_test
+.PHONY:all aes_test rsa_test 3des_test des_test base64_test hmac_test md5_test_string
 all:aes_test rsa_test 3des_test des_test base64_test hmac_test md5_test_string
 
 aes_test:

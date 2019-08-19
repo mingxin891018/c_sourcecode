@@ -25,7 +25,6 @@
 #define log_error(format,...) printf("[E/%s:%d] "format, __FUNCTION__, __LINE__, ##__VA_ARGS__)
 
 //生成公钥和私钥
-static char m_str_rand_seed[] = "SUNNIWELL Beijing SBox upgrade sinature generate.";
 
 static void bin_print(const unsigned char *data, size_t len)
 {
@@ -38,356 +37,143 @@ static void bin_print(const unsigned char *data, size_t len)
 
 static int create_key(const char *path)
 {
-	int ret = 0;
-	EC_KEY *eckey = NULL;
-	const BIGNUM *priv_key = NULL;
-	const EC_POINT *pub_key = NULL;
+	EC_KEY *key1,*key2;
+	const EC_POINT *pubkey1,*pubkey2;
+	EC_GROUP *group1,*group2;
+	unsigned int ret,nid,size,i,sig_len;
+	unsigned char *signature,digest[20];
+	EC_builtin_curve *curves;
+	int crv_len;
+	char shareKey1[128],shareKey2[128];
+	int len1,len2;
 
-	RAND_seed(m_str_rand_seed, sizeof(m_str_rand_seed));
-
-	/* create the key */
-	if ((eckey = EC_KEY_new_by_curve_name(410)) == NULL)
-		goto ERR_EXIT;
-	if (!EC_KEY_generate_key(eckey))
-		goto ERR_EXIT;
-	priv_key = EC_KEY_get0_private_key( eckey );
-	pub_key = EC_KEY_get0_public_key( eckey );
-
-	//保存private key
-	{    
-		FILE* fp;
-		char* fname = PRIVATE_KEY;
-		char* priv_str = BN_bn2hex( priv_key );
-		{
-			fp = fopen(fname, "wb");
-			if( fp )
-			{
-				fwrite( priv_str, 1, strlen(priv_str), fp );
-				fclose(fp);
-			}
-		}
-		OPENSSL_free( priv_str );
-	}
-
-	//保存public key
+	/* 构造 EC_KEY 数据结构 */
+	key1=EC_KEY_new();
+	if(key1==NULL)
 	{
-		FILE* fp;
-		char* fname = PUBLIC_KEY;
-		char* pub_str;
-		fp = fopen(fname, "wb");
-		if( fp )
-		{
-			BIGNUM *x, *y, *z;
-			x = BN_new();
-			y = BN_new();
-			z = BN_new();
-			if( EC_POINT_get_Jprojective_coordinates_GFp( EC_KEY_get0_group(eckey), pub_key, x, y, z, NULL ) )
-			{
-				pub_str = BN_bn2hex(x);
-				fprintf( fp, "\"%s\",\n", pub_str );
-				OPENSSL_free(pub_str);
-				pub_str = BN_bn2hex(y);
-				fprintf( fp, "\"%s\",\n", pub_str );
-				OPENSSL_free(pub_str);
-				pub_str = BN_bn2hex(z);
-				fprintf( fp, "\"%s\"\n", pub_str );
-				OPENSSL_free(pub_str);
-			}
-			BN_free( x );
-			BN_free( y );
-			BN_free( z );
-			fclose(fp);
-		}
+		printf("EC_KEY_new err!\n");
+		return -1;
 	}
-	ret = 1;
-ERR_EXIT:
-	if( eckey )
-		EC_KEY_free( eckey );
-	return ret;
+	key2=EC_KEY_new();
+	if(key2==NULL)
+	{
+		printf("EC_KEY_new err!\n");
+		return -1;
+	}
+	/* 获取实现的椭圆曲线个数 */
+	crv_len = EC_get_builtin_curves(NULL, 0);
+	curves = (EC_builtin_curve *)malloc(sizeof(EC_builtin_curve) * crv_len);
+
+	/* 获取椭圆曲线列表 */
+	//nid=curves[0].nid;会有错误，原因是密钥太短
+	EC_get_builtin_curves(curves, crv_len);
+	nid=curves[25].nid;
+
+	/* 根据选择的椭圆曲线生成密钥参数 group */
+	group1=EC_GROUP_new_by_curve_name(nid);
+	if(group1==NULL)
+	{
+		printf("EC_GROUP_new_by_curve_name err!\n");
+		return -1;
+	}
+	group2=EC_GROUP_new_by_curve_name(nid);
+	if(group1==NULL)
+	{
+		printf("EC_GROUP_new_by_curve_name err!\n");
+		return -1;
+	}
+
+	/* 设置密钥参数 */
+	ret=EC_KEY_set_group(key1,group1);
+	if(ret!=1)
+	{
+		printf("EC_KEY_set_group err.\n");
+		return -1;
+	}
+	ret=EC_KEY_set_group(key2,group2);
+	if(ret!=1)
+	{
+		printf("EC_KEY_set_group err.\n");
+		return -1;
+	}
+
+	/* 生成密钥 */
+	ret=EC_KEY_generate_key(key1);
+	if(ret!=1)
+	{
+		printf("EC_KEY_generate_key err.\n");
+		return -1;
+	}
+	ret=EC_KEY_generate_key(key2);
+	if(ret!=1)
+	{
+		printf("EC_KEY_generate_key err.\n");
+		return -1;
+	}
+
+	/* 检查密钥 */
+	ret=EC_KEY_check_key(key1);
+	if(ret!=1)
+	{
+		printf("check key err.\n");
+		return -1;
+	}
+
+	/* 获取密钥大小 */
+	size=ECDSA_size(key1);
+	printf("size %d \n",size);
+	for(i=0;i<20;i++)
+		memset(&digest[i],i+1,1);
+	signature= (unsigned char*)malloc(size);
+
+	/* 签名数据，本例未做摘要，可将 digest 中的数据看作是 sha1 摘要结果 */
+	ret=ECDSA_sign(0,digest,20,signature,&sig_len,key1);
+	if(ret!=1)
+	{
+		printf("sign err!\n");
+		return -1;
+	}
+	/* 验证签名 */
+	ret=ECDSA_verify(0,digest,20,signature,sig_len,key1);
+	if(ret!=1)
+	{
+		printf("ECDSA_verify err!\n");
+		return -1;
+	}
+	/* 获取对方公钥，不能直接引用 */
+	pubkey2 = EC_KEY_get0_public_key(key2);
+	/* 生成一方的共享密钥 */
+	len1= ECDH_compute_key(shareKey1, 128, pubkey2, key1, NULL);
+	pubkey1 = EC_KEY_get0_public_key(key1);
+	/* 生成另一方共享密钥 */
+	len2= ECDH_compute_key(shareKey2, 128, pubkey1, key2, NULL);
+	if(len1!=len2)
+	{
+		printf("err\n");
+	}
+	else
+	{
+		ret=memcmp(shareKey1,shareKey2,len1);
+		if(ret==0)
+			printf("生成共享密钥成功\n");
+		else
+			printf("生成共享密钥失败\n");
+	}
+	printf("test ok!\n");
+	EC_KEY_free(key1);
+	EC_KEY_free(key2);
+	free(signature);
+	free(curves);
+	return 0;
 }
 
-#if 1
 //输出签名结果
 static int create_signature( const char *path)
 {
-	int fd = -1, ret = 0;
-	unsigned char digest[64];
-	unsigned char out_buf[64];
-	unsigned int  dgst_len = 0;
-	char *szBuf = NULL, *in_buf = NULL;
-	size_t size = 0, re_read = 0;
-	
-	BIGNUM *priv_key = NULL;
-	EC_KEY *eckey = NULL;
-	EVP_MD_CTX *md_ctx = EVP_MD_CTX_new();
-	ECDSA_SIG *signature = NULL;
-
-	if(!md_ctx){
-		log_error("md_ctx is null!\n");
-		goto ERR_EXIT;
-	}
-
-	//read private_key
-	fd = open(PRIVATE_KEY, O_RDWR);
-	if(fd < 0){
-		log_error("open %s failed!\n", PRIVATE_KEY);
-		goto ERR_EXIT;
-	}
-	
-	size = lseek(fd, 0, SEEK_END);
-	lseek(fd, 0, SEEK_SET);
-	szBuf = malloc(size);
-	if(!szBuf){
-		log_error("malloc szBuf failed!\n");
-		goto ERR_EXIT;
-	}
-
-	log_info("priv_key size=%zu\n", size);
-	while(size > 0){
-		re_read = read(fd, szBuf + re_read, size);
-		if(re_read < 0){
-			log_error("read error ret=%zu\n", re_read);
-			goto ERR_EXIT;
-		}
-		size -= re_read;
-		log_info("re_read=%zu\n", re_read);
-	}
-	close(fd);
-	fd = -1;
-
-	printf("use ecc key **************%s\n", szBuf + 18);
-	if( !BN_hex2bn( &priv_key, szBuf ) )
-		goto ERR_EXIT;
-	if ((eckey = EC_KEY_new_by_curve_name(410)) == NULL)
-		goto ERR_EXIT;
-	
-	EC_KEY_set_private_key( eckey, priv_key );
-	EVP_DigestInit_ex(md_ctx,EVP_sha256(), NULL);
-
-	//读取待签名的文件
-	fd = open(path, O_RDWR);
-	if(fd < 0)
-		goto ERR_EXIT;
-	size = lseek(fd, 0, SEEK_END);
-	lseek(fd, 0, SEEK_SET);
-
-	in_buf = malloc(size);
-	if(!in_buf)
-		goto ERR_EXIT;
-	
-	while(size > 0){
-		re_read = read(fd, in_buf, size);
-		if(re_read < 0){
-			log_error("read error ret=%zu\n", re_read);
-			goto ERR_EXIT;
-		}
-		EVP_DigestUpdate(md_ctx, in_buf, re_read);
-		size -= re_read;
-		log_info("re_read=%zu\n", re_read);
-	}
-
-	//签名，信息存盘
-	EVP_DigestFinal_ex(md_ctx, digest, &dgst_len);
-	bin_print((const unsigned char *)digest, dgst_len);
-
-	signature = ECDSA_do_sign(digest, dgst_len, eckey);
-	if(signature == NULL)
-		goto ERR_EXIT;
-
-	memset(out_buf, 0, sizeof(out_buf));
-	BN_bn2bin( signature->r, out_buf );
-	BN_bn2bin( signature->s, out_buf+24 );
-
-	bin_print((const unsigned char *)signature, 24);
-	FILE *file = fopen(SIGNATURE_FILE, "w");
-	if(!file)
-		goto ERR_EXIT;
-	fprintf(file, "%s", out_buf);
-	fclose(file);
-	ret = 1;
-
-ERR_EXIT:
-	if(szBuf)
-		free(szBuf);
-	if(in_buf)
-		free(in_buf);
-	if(fd > 0)
-		close(fd);
-	if( eckey )
-		EC_KEY_free( eckey );
-	if( priv_key )
-		BN_free( priv_key );
-	if( signature )
-		ECDSA_SIG_free( signature );
-	if(md_ctx)
-		EVP_MD_CTX_free(md_ctx);
-	return ret;
+	return 0;
 }
 
-#endif
-#if 0
 //验证签名结果
-typedef struct signature_context
-{
-	EC_POINT *pub_key;
-	EC_KEY *eckey;
-	ECDSA_SIG *signature;
-	EVP_MD_CTX md_ctx;
-	char    dummy[32];    /*此数据为无效数据，防止不同的openssl版本导致的EVP_MD_CTX结构体大小不一引起的死机问题*/
-	unsigned char buf[650];
-	int buflen;
-	bool bupdate;
-}sw_sig_context;
-
-HANDLE sw_signature_create(const char *pubkey[], int nid, uint8_t* signature_buf)
-{
-	if (sw_parameter_get_int("upgrade_signature") == 0)
-		return NULL;
-	if ( pubkey == NULL )
-		return NULL;
-	sw_sig_context *context = (sw_sig_context*)malloc(sizeof(sw_sig_context));
-	if ( context == NULL )
-		return NULL;
-	BIGNUM *pub[3];
-	int i;
-	memset( pub, 0, sizeof(pub) );
-	memset(context, 0, sizeof(sw_sig_context));
-	if ((context->eckey = EC_KEY_new_by_curve_name(410)) == NULL)
-		goto ERROR_CREATE;
-	if ( pubkey != NULL )
-	{        
-		for( i=0; i<3; i++ )
-		{
-			BN_hex2bn( pub+i, pubkey[i] );
-			if (pub[i] == NULL)
-				goto ERROR_CREATE;
-		}
-		if ((context->pub_key = EC_POINT_new( EC_KEY_get0_group(context->eckey) )) == NULL )
-			goto ERROR_CREATE;
-		EC_POINT_set_Jprojective_coordinates_GFp( EC_KEY_get0_group(context->eckey), context->pub_key, pub[0], pub[1], pub[2], NULL );
-		EC_KEY_set_public_key( context->eckey, context->pub_key );
-	}
-	if ( signature_buf != NULL )
-	{
-		/* create the signature */
-		if ((context->signature = ECDSA_SIG_new()) == NULL)
-			goto ERROR_CREATE;
-		BN_bin2bn( (unsigned char*)signature_buf, 24, context->signature->r );
-		BN_bin2bn( (unsigned char*)signature_buf+24, 24, context->signature->s );
-	}
-	EVP_MD_CTX_init(&context->md_ctx);
-	EVP_DigestInit(&context->md_ctx, EVP_ecdsa());
-	context->buflen = 0;
-	context->bupdate = false;
-	return context;
-ERROR_CREATE:
-	if( context->eckey )
-		EC_KEY_free( context->eckey );
-	if( context->pub_key )
-		EC_POINT_free( context->pub_key );
-	if( context->signature )
-		ECDSA_SIG_free( context->signature );
-	for( i=0; i<3; i++ )
-	{    
-		if ( pub[i] )
-			BN_free( pub[i] );
-	}
-	free(context);
-	SWUPG_LOG_INFO("%s fail\n", __FUNCTION__);
-	return NULL;
-}
-
-bool sw_signature_update(HANDLE scontex, uint8_t *inbuf, int inlen)
-{
-	if (inbuf == NULL || inlen <= 0)
-		return false;
-	unsigned char *in_buf = inbuf;
-	int in_len = inlen;
-	sw_sig_context *context = (sw_sig_context *)scontex;
-	if ( context == NULL )
-		return false;
-	int tlen = in_len + context->buflen;
-	context->bupdate = true;
-	if ( tlen < 640 )
-	{
-		memcpy(&(context->buf[context->buflen]), in_buf, in_len);
-		context->buflen = tlen;
-		return true;
-	}
-	if ( context->buflen != 0 )
-	{
-		memcpy(&(context->buf[context->buflen]), in_buf, 640-context->buflen);
-		EVP_DigestUpdate(&context->md_ctx, &context->buf, 64);
-		in_len = in_len - (640-context->buflen);
-		in_buf = &in_buf[640-context->buflen];
-		context->buflen = 0;
-	}
-	while ( 640 <= in_len )
-	{
-		EVP_DigestUpdate(&context->md_ctx, in_buf, 64);
-		in_len = in_len - 640;
-		in_buf = &in_buf[640];
-	}
-	if (0 < in_len)
-	{
-		memcpy(&context->buf, in_buf, in_len);
-		context->buflen = in_len;
-	}
-	return true;
-}
-
-bool sw_signature_final(HANDLE scontex, uint8_t *signature_buf)
-{
-	if (sw_parameter_get_int("upgrade_signature") == 0)
-		return true;
-	unsigned char digest[64];
-	unsigned int  dgst_len = 0;
-	bool ret = false;
-	sw_sig_context *context = (sw_sig_context*)scontex;
-	if ( context == NULL )
-	{
-		SWUPG_LOG_ERROR("%s handle is null\n", __FUNCTION__);
-		return false;
-	}
-	if ( !context->bupdate )
-	{
-		SWUPG_LOG_INFO("not update\n");
-		ret = true;
-		goto END_VERIFY;
-	}    
-	if ( context->buflen != 0 )
-	{
-		EVP_DigestUpdate(&context->md_ctx, context->buf, context->buflen < 64 ? context->buflen : 64);
-	}
-	EVP_DigestFinal(&context->md_ctx, digest, &dgst_len);
-	/* create the signature */
-	if ( signature_buf )
-	{
-		if( context->signature )
-			ECDSA_SIG_free( context->signature );
-		if ((context->signature = ECDSA_SIG_new()) == NULL)
-			goto END_VERIFY;
-		BN_bin2bn( (unsigned char*)signature_buf, 24, context->signature->r );
-		BN_bin2bn( (unsigned char*)signature_buf+24, 24, context->signature->s );
-	}
-	if (ECDSA_do_verify(digest, 20, context->signature, context->eckey) != 1)
-	{
-		SWUPG_LOG_INFO("verify error\n");
-		goto END_VERIFY;
-	}
-	ret = true;
-END_VERIFY:
-	if( context->eckey )
-		EC_KEY_free( context->eckey );
-	if( context->pub_key )
-		EC_POINT_free( context->pub_key );
-	if( context->signature )
-		ECDSA_SIG_free( context->signature );
-	free(context);
-	return ret;
-}
-
-#endif
 int check_signature(const char *file_path)
 {
 

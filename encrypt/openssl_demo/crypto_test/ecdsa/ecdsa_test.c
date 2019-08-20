@@ -228,13 +228,12 @@ static int create_signature( const char *path)
 {
 	int dig_len = 0;
 	EC_builtin_curve *curves = NULL;
-	int ret = -1, crv_len = 0, nid = 0, i = 0;
 	unsigned char *szBuf = NULL, *in_buf = NULL;
 	unsigned char digest[32] = {0}, out_buf[64] = {0};
+	int ret = -1, crv_len = 0, nid = 0, i = 0, sign_len = 0;
 
 	EC_KEY *eckey = NULL;
 	BIGNUM *priv_key = NULL;
-	ECDSA_SIG *signature = NULL;
 	EVP_MD_CTX *md_ctx = EVP_MD_CTX_new();
 
 	if(!md_ctx){
@@ -283,22 +282,14 @@ static int create_signature( const char *path)
 	bin_print(digest, dig_len);
 
 	//签名，信息存盘
-	signature = ECDSA_do_sign((const unsigned char *)digest, dig_len, eckey);
-	if(signature == NULL){
+	memset(out_buf, 0, sizeof(out_buf));
+	ECDSA_sign(0, (const unsigned char *)digest, dig_len, out_buf, &sign_len, eckey);
+	if(out_buf[0] == 0){
 		log_error("ecdsa sign failed!\n");
 		goto ERR_EXIT;
 	}
-
-	memset(out_buf, 0, sizeof(out_buf));
-	BN_bn2bin( signature->r, out_buf );
-	log_info("signature->r=%s", out_buf);
-	bin_print((const unsigned char *)out_buf, 24);
 	
-	BN_bn2bin( signature->s, out_buf+24 );
-	log_info("signature->r=%s", out_buf + 24);
-	bin_print((const unsigned char *)out_buf + 24, 24);
-	
-	log_info("signature out_buf=%s\n", out_buf);
+	log_info("signature sign_len=%d,out_buf=%s\n", sign_len, out_buf);
 	FILE *file = fopen(SIGNATURE_FILE, "w");
 	if(!file)
 		goto ERR_EXIT;
@@ -317,8 +308,6 @@ ERR_EXIT:
 		EC_KEY_free( eckey );
 	if( priv_key )
 		BN_free( priv_key );
-	if( signature )
-		ECDSA_SIG_free( signature );
 	if(md_ctx)
 		EVP_MD_CTX_free(md_ctx);
 
@@ -387,41 +376,23 @@ READ_END:
 	return 0;
 }
 
-ECDSA_SIG *get_signature(const char *path)
+unsigned char *get_signature(const char *path)
 {
-	ECDSA_SIG *signature = NULL;
 	unsigned char *signature_buf = read_file(path);
-	if(!signature_buf){
-		log_info("signature_buf read failed!\n");
-		goto GET_END;
-	}
-
-	log_info("signature_buf=%s\n", signature_buf);
-	signature = ECDSA_SIG_new();
-	if(!signature)
-		goto GET_END;
-
-	signature->r = BN_bin2bn( (const unsigned char*)signature_buf, 24, NULL);
-	signature->s = BN_bin2bn( (const unsigned char*)signature_buf + 24, 24, NULL);
-
-GET_END:
-	if(signature_buf)
-		free(signature_buf);
-
-	return signature;
+	return signature_buf;
 }
 
 //验证签名结果
 int check_signature(const char *file_path)
 {
 	unsigned int  dig_len = 0;
-	EC_builtin_curve *curves = NULL;
-	int ret = 0, crv_len = 0, nid = 0;
 	unsigned char digest[32] = {0};
+	EC_builtin_curve *curves = NULL;
+	int ret = 0, crv_len = 0, nid = 0, i = 0;
 
 	EC_POINT *pub_key = NULL;
 	EC_KEY *eckey = NULL;
-	ECDSA_SIG *signature = NULL;
+	unsigned char *signature = NULL;
 	EVP_MD_CTX *md_ctx = EVP_MD_CTX_new();
 
 	if(!md_ctx){
@@ -436,7 +407,13 @@ int check_signature(const char *file_path)
 	/* 获取椭圆曲线列表 */
 	//nid=curves[0].nid;会有错误，原因是密钥太短
 	EC_get_builtin_curves(curves, crv_len);
-	nid=curves[25].nid;
+	for(i = 0; i < crv_len; i++){
+		if(curves[i].nid == 410){
+			log_info("curves[%d]=410\n", i);
+			break;
+		}
+	}
+	nid=curves[i].nid;
 	log_info("curves_num=%d,nid=%d\n", crv_len, nid);
 
 	/* 根据选择的椭圆曲线生成密钥 */
@@ -471,11 +448,12 @@ int check_signature(const char *file_path)
 		goto ERR_EXIT;
 	}
 
-	if (ECDSA_do_verify(digest, 20, signature, eckey) != 1)
+	if (ECDSA_verify(0, digest, 20, signature, strlen(signature), eckey) != 1)
 	{
 		log_error("verify error\n");
 		goto ERR_EXIT;
 	}
+	log_error("verify success\n");
 	ret = 0;
 
 ERR_EXIT:

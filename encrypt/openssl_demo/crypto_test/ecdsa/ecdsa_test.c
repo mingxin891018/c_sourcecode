@@ -157,15 +157,12 @@ static int create_key(void)
 				log_info("set point to group success\n");
 				pub_str = BN_bn2hex(x);
 				fprintf( fp, "\"%s\",\n", pub_str );
-				log_info("pub1=%s\n", pub_str);
 				OPENSSL_free(pub_str);
 				pub_str = BN_bn2hex(y);
 				fprintf( fp, "\"%s\",\n", pub_str );
-				log_info("pub2=%s\n", pub_str);
 				OPENSSL_free(pub_str);
 				pub_str = BN_bn2hex(z);
 				fprintf( fp, "\"%s\"\n", pub_str );
-				log_info("pub3=%s\n", pub_str);
 				OPENSSL_free(pub_str);
 			}
 			BN_free( x );
@@ -198,7 +195,7 @@ unsigned char *read_file(const char *path)
 	}
 
 	size = lseek(fd, 0, SEEK_END);
-	log_info("priv_key size=%zu\n", size);
+	log_info("size=%zu\n", size);
 	lseek(fd, 0, SEEK_SET);
 	
 	szBuf = (unsigned char *)malloc(size + 1);
@@ -283,8 +280,7 @@ static int create_signature( const char *path)
 
 	//签名，信息存盘
 	memset(out_buf, 0, sizeof(out_buf));
-	ECDSA_sign(0, (const unsigned char *)digest, dig_len, out_buf, &sign_len, eckey);
-	if(out_buf[0] == 0){
+	if(ECDSA_sign(0, (const unsigned char *)digest, dig_len, out_buf, &sign_len, eckey) != 1){
 		log_error("ecdsa sign failed!\n");
 		goto ERR_EXIT;
 	}
@@ -471,6 +467,7 @@ void showUsage(void)
 	printf(" --create_key		\n" );
 	printf(" --create_sign=FILE	\n"	);
 	printf(" --check_sign=FILE	\n"	);
+	printf(" --ecdsa_test		\n"	);
 	printf(" --version			\n"	);
 	printf(" --help				\n"	);
 }
@@ -489,6 +486,7 @@ int main(int argc, char* argv[])
 			{ "create_key", 	no_argument, 		NULL,	'k'		},
 			{ "create_sign", 	required_argument, 	NULL,	's'		},
 			{ "check_sign", 	required_argument, 	NULL,	'g'		},
+			{ "ecdsa_test", 	no_argument, 		NULL,	't'		},
 			{ "version", 		no_argument,		NULL, 	'v' 	},
 			{ "help", 			no_argument, 		NULL, 	'h' 	},
 			{ NULL, 0, NULL, 0},
@@ -512,6 +510,9 @@ int main(int argc, char* argv[])
 				   break;
 			case 'v':
 				   showVersion();
+				   exit(0);
+			case 't':
+				   ecdsa_test();
 				   exit(0);
 			case 'h':
 				   showUsage();

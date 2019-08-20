@@ -4,8 +4,8 @@ INDIR += \
 DYN_LDS_WITH += \
 -L../openssl-lib/lib/ -lcrypto
 
-.PHONY:all aes_test rsa_test 3des_test des_test base64_test hmac_test md5_test_string
-all:aes_test rsa_test 3des_test des_test base64_test hmac_test md5_test_string
+.PHONY:all aes_test rsa_test 3des_test des_test base64_test hmac_test md5_test_string ecdsa
+all:aes_test rsa_test 3des_test des_test base64_test hmac_test md5_test_string ecdsa
 
 aes_test:
 	cc aes_test.c $(INDIR) $(DYN_LDS_WITH) -lcrypto -o aes_test -Wall
@@ -28,8 +28,12 @@ hmac_test:
 md5_test_string:
 	cc md5_test_string.c $(INDIR) $(DYN_LDS_WITH) -lcrypto -o md5_test_string -Wall
 
+ecdsa:
+	make -C ecdsa
+
 clean:
 	rm -rf aes_test rsa_test rsa_test 3des_test des_test base64_test hmac_test md5_test_string
+	make -C ecdsa clean
 
 
 

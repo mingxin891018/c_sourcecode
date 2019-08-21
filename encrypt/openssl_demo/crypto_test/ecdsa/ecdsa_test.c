@@ -304,18 +304,13 @@ ERR_EXIT:
 static int create_signature( const char *path)
 {
 	unsigned char digest[32] = {0};
-	EC_builtin_curve *curves = NULL;
 	unsigned char *szBuf = NULL, *out_buf = NULL;
 	int ret = -1, crv_len = 0, nid = 0, i = 0, dig_len = 0, sign_len = 0;
 
 	EC_KEY *eckey = NULL;
 	BIGNUM *priv_key = NULL;
-	EVP_MD_CTX *md_ctx = EVP_MD_CTX_new();
-
-	if(!md_ctx){
-		log_error("md_ctx is null!\n");
-		goto ERR_EXIT;
-	}
+	EC_POINT *pub_key = NULL;
+	EC_builtin_curve *curves = NULL;
 
 	//读取private key
 	szBuf = read_file(PRIVATE_KEY);
@@ -346,20 +341,30 @@ static int create_signature( const char *path)
 	nid=curves[i].nid;
 	log_info("curves_num=%d,nid=%d\n", crv_len, nid);
 
-	/* 根据选择的椭圆曲线生成密钥 */
 	eckey = EC_KEY_new_by_curve_name(nid);
 	if(eckey == NULL){
 		log_error("create eckey err!\n");
 		goto ERR_EXIT;
 	}
 
-	/* 为产生的eckey设置私钥priv_key  */
+	/* 为产生的eckey设置私钥priv_key 和公钥 pub_key */
 	if(EC_KEY_set_private_key( eckey, priv_key ) != 1){
 		log_error("set private_key success!\n");
 		goto ERR_EXIT;
 	}
-	//EC_KEY_generate_key(eckey);
 	
+	/* 根据选择的椭圆曲线和私钥生成公钥 */
+	//pub_key = EC_POINT_new(EC_KEY_get0_group(eckey));
+	//if(EC_POINT_mul(EC_KEY_get0_group(eckey), pub_key, priv_key, NULL, NULL, NULL) != 1){
+	//	log_error("set pub_key point failed!\n");
+	//	goto ERR_EXIT;
+	//}
+
+	//if(EC_KEY_set_public_key(eckey, pub_key) != 1){
+	//	log_error("set private_key success!\n");
+	//	goto ERR_EXIT;
+	//}
+
 	//检测eckey project是否正确
 	if(EC_KEY_check_key(eckey) != 1){
 		log_error("check eckey failed!\n");
@@ -403,16 +408,17 @@ static int create_signature( const char *path)
 	ret = 1;
 
 ERR_EXIT:
-	if(curves)
-		free(curves);
 	if(szBuf)
 		free(szBuf);
+	
+	if(curves)
+		free(curves);
 	if( eckey )
 		EC_KEY_free( eckey );
+	if(pub_key)
+		EC_POINT_free(pub_key);
 	if( priv_key )
 		BN_free( priv_key );
-	if(md_ctx)
-		EVP_MD_CTX_free(md_ctx);
 
 	return ret;
 }
@@ -428,12 +434,6 @@ int check_signature(const char *file_path)
 	EC_POINT *pub_key = NULL;
 	EC_KEY *eckey = NULL;
 	unsigned char *signature = NULL;
-	EVP_MD_CTX *md_ctx = EVP_MD_CTX_new();
-
-	if(!md_ctx){
-		log_error("md_ctx is null!\n");
-		goto ERR_EXIT;
-	}
 
 	/* 获取实现的椭圆曲线个数 */
 	crv_len = EC_get_builtin_curves(NULL, 0);
@@ -492,8 +492,6 @@ int check_signature(const char *file_path)
 	ret = 0;
 
 ERR_EXIT:
-	if(md_ctx)
-		EVP_MD_CTX_free(md_ctx);
 	if( eckey )
 		EC_KEY_free( eckey );
 	

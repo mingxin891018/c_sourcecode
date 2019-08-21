@@ -14,7 +14,8 @@
 
 #include <openssl/rand.h>
 #include <openssl/ec.h>
-#include <openssl/ecerr.h>
+#include <openssl/ecdsa.h>
+#include <openssl/ecdh.h>
 #include <openssl/evp.h>
 
 #define PUBLIC_KEY 	"./public_key.txt"

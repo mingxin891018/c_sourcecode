@@ -29,156 +29,15 @@ static char m_str_rand_seed[] = "SUNNIWELL Beijing SBox upgrade sinature generat
 static void bin_print(const unsigned char *data, size_t len)
 {
 	size_t i;
+
+	if(!data || len <= 0){
+		return;
+	}
+
 	printf("BIN DATA LEN=%zu,DATA:\n", len);
 	for(i = 0; i < len; i++)
 		printf("%02X", data[i]&0xff);
 	printf("\n");
-}
-
-int get_sha1_digest(const char *path, unsigned char *digest, int *dig_len)
-{
-	int ret = -1, fd = -1;
-	size_t size = 0, re_read = 0;
-	unsigned char *in_buf = NULL;
-	EVP_MD_CTX *md_ctx = EVP_MD_CTX_new();
-
-	if(!md_ctx){
-		log_error("md_ctx is null!\n");
-		goto ERR_EXIT;
-	}
-
-	EVP_DigestInit_ex(md_ctx,EVP_sha1(), NULL);
-
-	//读取待签名的文件
-	fd = open(path, O_RDWR);
-	if(fd < 0)
-		goto ERR_EXIT;
-	size = lseek(fd, 0, SEEK_END);
-	lseek(fd, 0, SEEK_SET);
-
-	in_buf = malloc(size);
-	if(!in_buf)
-		goto ERR_EXIT;
-
-	while(size > 0){
-		re_read = read(fd, in_buf, size);
-		if(re_read < 0){
-			log_error("read error ret=%zu\n", re_read);
-			goto ERR_EXIT;
-		}
-		EVP_DigestUpdate(md_ctx, in_buf, re_read);
-		size -= re_read;
-		log_info("re_read=%zu\n", re_read);
-	}
-
-	EVP_DigestFinal_ex(md_ctx, digest, dig_len);
-	ret = 0;
-
-ERR_EXIT:
-	if(md_ctx)
-		EVP_MD_CTX_free(md_ctx);
-	if(in_buf)
-		free(in_buf);
-	if(fd > 0)
-		close(fd);
-
-	return ret;
-}
-
-static int create_key(void)
-{
-	EC_KEY *eckey = NULL;
-	EC_builtin_curve *curves = NULL;
-	const BIGNUM *priv_key = NULL;
-	const EC_POINT *pub_key = NULL;
-	int ret = 0, nid = 0, crv_len = 0, i = 0;
-
-	RAND_seed(m_str_rand_seed, sizeof(m_str_rand_seed));
-
-	/* 获取实现的椭圆曲线个数 */
-	crv_len = EC_get_builtin_curves(NULL, 0);
-	curves = (EC_builtin_curve *)malloc(sizeof(EC_builtin_curve) * crv_len);
-
-	/* 获取椭圆曲线列表 */
-	//nid=curves[0].nid;会有错误，原因是密钥太短
-	EC_get_builtin_curves(curves, crv_len);
-	for(i = 0; i < crv_len; i++){
-		if(curves[i].nid == 410){
-			log_info("curves[%d]=410\n", i);
-			break;
-		}
-	}
-	nid=curves[i].nid;
-	log_info("curves_num=%d,nid=%d\n", crv_len, nid);
-
-	/* 根据选择的椭圆曲线生成密钥 */
-	eckey = EC_KEY_new_by_curve_name(nid);
-	if(eckey == NULL){
-		log_error("create eckey err!\n");
-		goto ERR_EXIT;
-	}
-
-	if (!EC_KEY_generate_key(eckey))
-		goto ERR_EXIT;
-	priv_key = EC_KEY_get0_private_key( eckey );
-	pub_key = EC_KEY_get0_public_key( eckey );
-
-	//保存private key
-	{
-		FILE* fp;
-		char* fname = PRIVATE_KEY;
-		char* priv_str = BN_bn2hex( priv_key );
-		{
-			fp = fopen(fname, "wb");
-			if( fp )
-			{
-				fwrite( priv_str, 1, strlen(priv_str), fp );
-				log_info("priv=%s\n", priv_str);
-				fclose(fp);
-			}
-		}
-		OPENSSL_free( priv_str );
-	}
-	//保存public key
-	{
-		FILE* fp;
-		char* fname = PUBLIC_KEY;
-		char* pub_str;
-		fp = fopen(fname, "w+");
-		if( fp )
-		{
-			log_info("open public_key file success.handle=%p\n", fp);
-			BIGNUM *x, *y, *z;
-			x = BN_new();
-			y = BN_new();
-			z = BN_new();
-			if( EC_POINT_get_Jprojective_coordinates_GFp( EC_KEY_get0_group(eckey), pub_key, x, y, z, NULL ) )
-			{
-				log_info("set point to group success\n");
-				pub_str = BN_bn2hex(x);
-				fprintf( fp, "\"%s\",\n", pub_str );
-				OPENSSL_free(pub_str);
-				pub_str = BN_bn2hex(y);
-				fprintf( fp, "\"%s\",\n", pub_str );
-				OPENSSL_free(pub_str);
-				pub_str = BN_bn2hex(z);
-				fprintf( fp, "\"%s\"\n", pub_str );
-				OPENSSL_free(pub_str);
-			}
-			BN_free( x );
-			BN_free( y );
-			BN_free( z );
-			fclose(fp);
-		}
-	}
-	ret = 1;
-
-ERR_EXIT:
-	if( eckey )
-		EC_KEY_free( eckey );
-	if(curves)
-		free(curves);
-	return ret;
 }
 
 unsigned char *read_file(const char *path)
@@ -186,6 +45,9 @@ unsigned char *read_file(const char *path)
 	int fd = -1;
 	unsigned char *szBuf = NULL;
 	size_t size = 0, re_read = 0;
+
+	if(!path)
+		goto ERR_EXIT;
 
 	//读取private key
 	fd = open(path, O_RDONLY);
@@ -218,96 +80,6 @@ ERR_EXIT:
 		close(fd);
 
 	return szBuf;
-}
-
-//输出签名结果
-static int create_signature( const char *path)
-{
-	int dig_len = 0;
-	EC_builtin_curve *curves = NULL;
-	unsigned char *szBuf = NULL, *in_buf = NULL;
-	unsigned char digest[32] = {0}, out_buf[64] = {0};
-	int ret = -1, crv_len = 0, nid = 0, i = 0, sign_len = 0;
-
-	EC_KEY *eckey = NULL;
-	BIGNUM *priv_key = NULL;
-	EVP_MD_CTX *md_ctx = EVP_MD_CTX_new();
-
-	if(!md_ctx){
-		log_error("md_ctx is null!\n");
-		goto ERR_EXIT;
-	}
-
-	//读取private key
-	szBuf = read_file(PRIVATE_KEY);
-	if(!szBuf){
-		log_error("read public_key error!\n");
-		goto ERR_EXIT;
-	}
-	log_info("priv_key=%s\n", szBuf);
-	priv_key = BN_bin2bn((const unsigned char *)szBuf, strlen(szBuf), NULL);
-
-	/* 获取实现的椭圆曲线个数 */
-	crv_len = EC_get_builtin_curves(NULL, 0);
-	curves = (EC_builtin_curve *)malloc(sizeof(EC_builtin_curve) * crv_len);
-
-	/* 获取椭圆曲线列表 */
-	//nid=curves[0].nid;会有错误，原因是密钥太短
-	EC_get_builtin_curves(curves, crv_len);
-	for(i = 0; i < crv_len; i++){
-		if(curves[i].nid == 410){
-			log_info("curves[%d]=410\n", i);
-			break;
-		}
-	}
-	nid=curves[i].nid;
-	log_info("curves_num=%d,nid=%d\n", crv_len, nid);
-
-	/* 根据选择的椭圆曲线生成密钥 */
-	eckey = EC_KEY_new_by_curve_name(nid);
-	if(eckey == NULL){
-		log_error("create eckey err!\n");
-		return -1;
-	}
-
-	/* 为产生的eckey设置私钥priv_key  */
-	EC_KEY_set_private_key( eckey, priv_key );
-
-	//获取签名文件的摘要信息
-	get_sha1_digest(path, digest, &dig_len);
-	log_info("sha1 digest:\n");
-	bin_print(digest, dig_len);
-
-	//签名，信息存盘
-	memset(out_buf, 0, sizeof(out_buf));
-	if(ECDSA_sign(0, (const unsigned char *)digest, dig_len, out_buf, &sign_len, eckey) != 1){
-		log_error("ecdsa sign failed!\n");
-		goto ERR_EXIT;
-	}
-	
-	log_info("signature sign_len=%d,out_buf=%s\n", sign_len, out_buf);
-	FILE *file = fopen(SIGNATURE_FILE, "w");
-	if(!file)
-		goto ERR_EXIT;
-	fprintf(file, "%s", out_buf);
-	fclose(file);
-	ret = 1;
-
-ERR_EXIT:
-	if(curves)
-		free(curves);
-	if(szBuf)
-		free(szBuf);
-	if(in_buf)
-		free(in_buf);
-	if( eckey )
-		EC_KEY_free( eckey );
-	if( priv_key )
-		BN_free( priv_key );
-	if(md_ctx)
-		EVP_MD_CTX_free(md_ctx);
-
-	return ret;
 }
 
 static int read_pub_point(const char *file_path, BIGNUM **big)
@@ -372,10 +144,277 @@ READ_END:
 	return 0;
 }
 
+int get_sha1_digest(const char *path, unsigned char *digest, int *dig_len)
+{
+	int ret = -1, fd = -1;
+	size_t size = 0, re_read = 0;
+	unsigned char *in_buf = NULL;
+	
+	if(!path || !digest || !dig_len)
+		goto ERR_EXIT;
+	
+	EVP_MD_CTX *md_ctx = EVP_MD_CTX_new();
+	if(!md_ctx){
+		log_error("md_ctx is null!\n");
+		goto ERR_EXIT;
+	}
+
+	EVP_DigestInit_ex(md_ctx,EVP_sha1(), NULL);
+
+	//读取待签名的文件
+	fd = open(path, O_RDWR);
+	if(fd < 0)
+		goto ERR_EXIT;
+	size = lseek(fd, 0, SEEK_END);
+	lseek(fd, 0, SEEK_SET);
+	
+	log_info("file %s length=%zu\n", path, size);
+	in_buf = malloc(size);
+	if(!in_buf)
+		goto ERR_EXIT;
+
+	while(size > 0){
+		re_read = read(fd, in_buf, size);
+		if(re_read < 0){
+			log_error("read error ret=%zu\n", re_read);
+			goto ERR_EXIT;
+		}
+		EVP_DigestUpdate(md_ctx, in_buf, re_read);
+		size -= re_read;
+	}
+
+	EVP_DigestFinal_ex(md_ctx, digest, dig_len);
+	ret = 0;
+
+ERR_EXIT:
+	if(md_ctx)
+		EVP_MD_CTX_free(md_ctx);
+	if(in_buf)
+		free(in_buf);
+	if(fd > 0)
+		close(fd);
+
+	return ret;
+}
+
 unsigned char *get_signature(const char *path)
 {
 	unsigned char *signature_buf = read_file(path);
 	return signature_buf;
+}
+
+static int create_key(void)
+{
+	EC_KEY *eckey = NULL;
+	EC_builtin_curve *curves = NULL;
+	const BIGNUM *priv_key = NULL;
+	const EC_POINT *pub_key = NULL;
+	int ret = 0, nid = 0, crv_len = 0, i = 0;
+
+	RAND_seed(m_str_rand_seed, sizeof(m_str_rand_seed));
+
+	/* 获取实现的椭圆曲线个数 */
+	crv_len = EC_get_builtin_curves(NULL, 0);
+	curves = (EC_builtin_curve *)malloc(sizeof(EC_builtin_curve) * crv_len);
+
+	/* 获取椭圆曲线列表 */
+	//nid=curves[0].nid;会有错误，原因是密钥太短
+	EC_get_builtin_curves(curves, crv_len);
+	for(i = 0; i < crv_len; i++){
+		log_info("curves[%d].comment=%s\n", i, curves[i].comment);
+		log_info("curves[%d].nid=%d\n", i, curves[i].nid);
+		if(curves[i].nid == 410){
+			log_info("curves[%d]=410\n", i);
+			break;
+		}
+	}
+	nid=curves[i].nid;
+	log_info("curves_num=%d,nid=%d\n", crv_len, nid);
+
+	/* 根据选择的椭圆曲线生成密钥 */
+	eckey = EC_KEY_new_by_curve_name(nid);
+	if(eckey == NULL){
+		log_error("create eckey err!\n");
+		goto ERR_EXIT;
+	}
+
+	if (!EC_KEY_generate_key(eckey))
+		goto ERR_EXIT;
+	priv_key = EC_KEY_get0_private_key( eckey );
+	pub_key = EC_KEY_get0_public_key( eckey );
+
+	//保存private key
+	{
+		FILE* fp;
+		char* fname = PRIVATE_KEY;
+		char* priv_str = BN_bn2hex( priv_key );
+		{
+			fp = fopen(fname, "wb");
+			if( fp )
+			{
+				fwrite( priv_str, 1, strlen(priv_str), fp );
+				log_info("set priv=%s success!\n", priv_str);
+				fclose(fp);
+			}
+		}
+		OPENSSL_free( priv_str );
+	}
+	//保存public key
+	{
+		FILE* fp;
+		char* fname = PUBLIC_KEY;
+		char* pub_str;
+		fp = fopen(fname, "w+");
+		if( fp )
+		{
+			BIGNUM *x, *y, *z;
+			x = BN_new();
+			y = BN_new();
+			z = BN_new();
+			if( EC_POINT_get_Jprojective_coordinates_GFp( EC_KEY_get0_group(eckey), pub_key, x, y, z, NULL ) )
+			{
+				pub_str = BN_bn2hex(x);
+				fprintf( fp, "\"%s\",\n", pub_str );
+				OPENSSL_free(pub_str);
+				pub_str = BN_bn2hex(y);
+				fprintf( fp, "\"%s\",\n", pub_str );
+				OPENSSL_free(pub_str);
+				pub_str = BN_bn2hex(z);
+				fprintf( fp, "\"%s\"\n", pub_str );
+				OPENSSL_free(pub_str);
+				log_info("set public_key to group success!\n");
+			}
+			BN_free( x );
+			BN_free( y );
+			BN_free( z );
+			fclose(fp);
+		}
+	}
+	ret = 1;
+
+ERR_EXIT:
+	if( eckey )
+		EC_KEY_free( eckey );
+	if(curves)
+		free(curves);
+	return ret;
+}
+
+//输出签名结果
+static int create_signature( const char *path)
+{
+	unsigned char digest[32] = {0};
+	EC_builtin_curve *curves = NULL;
+	unsigned char *szBuf = NULL, *out_buf = NULL;
+	int ret = -1, crv_len = 0, nid = 0, i = 0, dig_len = 0, sign_len = 0;
+
+	EC_KEY *eckey = NULL;
+	BIGNUM *priv_key = NULL;
+	EVP_MD_CTX *md_ctx = EVP_MD_CTX_new();
+
+	if(!md_ctx){
+		log_error("md_ctx is null!\n");
+		goto ERR_EXIT;
+	}
+
+	//读取private key
+	szBuf = read_file(PRIVATE_KEY);
+	if(!szBuf){
+		log_error("read public_key error!\n");
+		goto ERR_EXIT;
+	}
+	log_info("priv_key=%s\n", szBuf);
+	priv_key = BN_bin2bn((const unsigned char *)szBuf, strlen(szBuf), NULL);
+	if(!priv_key){
+		log_error("read priv_key failed!\n");
+		goto ERR_EXIT;
+	}
+
+	/* 获取实现的椭圆曲线个数 */
+	crv_len = EC_get_builtin_curves(NULL, 0);
+	curves = (EC_builtin_curve *)malloc(sizeof(EC_builtin_curve) * crv_len);
+
+	/* 获取椭圆曲线列表 */
+	//nid=curves[0].nid;会有错误，原因是密钥太短
+	EC_get_builtin_curves(curves, crv_len);
+	for(i = 0; i < crv_len; i++){
+		if(curves[i].nid == 410){
+			log_info("curves[%d]=410\n", i);
+			break;
+		}
+	}
+	nid=curves[i].nid;
+	log_info("curves_num=%d,nid=%d\n", crv_len, nid);
+
+	/* 根据选择的椭圆曲线生成密钥 */
+	eckey = EC_KEY_new_by_curve_name(nid);
+	if(eckey == NULL){
+		log_error("create eckey err!\n");
+		goto ERR_EXIT;
+	}
+
+	/* 为产生的eckey设置私钥priv_key  */
+	if(EC_KEY_set_private_key( eckey, priv_key ) != 1){
+		log_error("set private_key success!\n");
+		goto ERR_EXIT;
+	}
+	//EC_KEY_generate_key(eckey);
+	
+	//检测eckey project是否正确
+	if(EC_KEY_check_key(eckey) != 1){
+		log_error("check eckey failed!\n");
+		goto ERR_EXIT;
+	}
+	log_info("check eckey success!\n");
+	
+	//获取签名文件的摘要信息
+	if(get_sha1_digest(path, digest, &dig_len) != 0){
+		log_error("sha1 digest failed!\n");
+		goto ERR_EXIT;
+	}
+	log_info("sha1 digest data:\n");
+	bin_print(digest, dig_len);
+
+	//签名
+	sign_len = ECDSA_size(eckey);
+	out_buf = malloc(sign_len);
+	if(!out_buf){
+		log_error("malloc filed!\n");
+		goto ERR_EXIT;
+	}
+	unsigned char *pp = out_buf;
+	memset(out_buf, 0, sign_len);
+	log_info("sign_len=%d\n", sign_len);
+	if(ECDSA_sign(0, (const unsigned char *)digest, dig_len, pp, &sign_len, eckey) != 1){
+		log_error("ecdsa sign failed!\n");
+		goto ERR_EXIT;
+	}
+
+	log_info("signature success!\n");
+	bin_print(out_buf, sign_len);
+
+	//签名数据存盘
+	FILE *file = fopen(SIGNATURE_FILE, "w");
+	if(!file)
+		goto ERR_EXIT;
+	for(i = 0; i < sign_len; i++)
+		fprintf(file, "%02X", out_buf[i]);
+	fclose(file);
+	ret = 1;
+
+ERR_EXIT:
+	if(curves)
+		free(curves);
+	if(szBuf)
+		free(szBuf);
+	if( eckey )
+		EC_KEY_free( eckey );
+	if( priv_key )
+		BN_free( priv_key );
+	if(md_ctx)
+		EVP_MD_CTX_free(md_ctx);
+
+	return ret;
 }
 
 //验证签名结果

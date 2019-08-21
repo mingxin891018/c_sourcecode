@@ -312,6 +312,14 @@ static int create_signature( const char *path)
 	EC_POINT *pub_key = NULL;
 	EC_builtin_curve *curves = NULL;
 
+	//获取签名文件的摘要信息
+	if(get_sha1_digest(path, digest, &dig_len) != 0){
+		log_error("sha1 digest failed!\n");
+		goto ERR_EXIT;
+	}
+	log_info("sha1 digest data:\n");
+	bin_print(digest, dig_len);
+
 	//读取private key
 	szBuf = read_file(PRIVATE_KEY);
 	if(!szBuf){
@@ -372,14 +380,6 @@ static int create_signature( const char *path)
 	}
 	log_info("check eckey success!\n");
 	
-	//获取签名文件的摘要信息
-	if(get_sha1_digest(path, digest, &dig_len) != 0){
-		log_error("sha1 digest failed!\n");
-		goto ERR_EXIT;
-	}
-	log_info("sha1 digest data:\n");
-	bin_print(digest, dig_len);
-
 	//签名
 	sign_len = ECDSA_size(eckey);
 	out_buf = malloc(sign_len);

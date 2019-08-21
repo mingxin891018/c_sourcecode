@@ -1,4 +1,5 @@
 #!/bin/bash 
+export LD_LIBRARY_PATH=$(pwd)/__install/lib/
 make clean;make
 echo "==========================================="
 ./ecdsa_test  --create_key

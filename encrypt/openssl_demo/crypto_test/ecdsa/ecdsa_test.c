@@ -154,13 +154,10 @@ int get_sha1_digest(const char *path, unsigned char *digest, int *dig_len)
 	if(!path || !digest || !dig_len)
 		goto ERR_EXIT;
 	
-	EVP_MD_CTX *md_ctx = EVP_MD_CTX_new();
-	if(!md_ctx){
-		log_error("md_ctx is null!\n");
-		goto ERR_EXIT;
-	}
+	EVP_MD_CTX md_ctx;
+	EVP_MD_CTX_init(&md_ctx);
 
-	EVP_DigestInit_ex(md_ctx,EVP_sha1(), NULL);
+	EVP_DigestInit_ex(&md_ctx,EVP_sha1(), NULL);
 
 	//读取待签名的文件
 	fd = open(path, O_RDWR);
@@ -180,16 +177,16 @@ int get_sha1_digest(const char *path, unsigned char *digest, int *dig_len)
 			log_error("read error ret=%zu\n", re_read);
 			goto ERR_EXIT;
 		}
-		EVP_DigestUpdate(md_ctx, in_buf, re_read);
+		EVP_DigestUpdate(&md_ctx, in_buf, re_read);
 		size -= re_read;
 	}
 
-	EVP_DigestFinal_ex(md_ctx, digest, dig_len);
+	EVP_DigestFinal_ex(&md_ctx, digest, dig_len);
 	ret = 0;
+	
+	EVP_MD_CTX_cleanup(&md_ctx);
 
 ERR_EXIT:
-	if(md_ctx)
-		EVP_MD_CTX_free(md_ctx);
 	if(in_buf)
 		free(in_buf);
 	if(fd > 0)

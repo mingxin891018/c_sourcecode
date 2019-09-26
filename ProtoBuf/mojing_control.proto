@@ -1,0 +1,129 @@
+syntax = "proto3";
+package sw_mojing_control;
+
+message UploadDeviceInfoRequest{
+    string DeviceID = 1;//设备ID
+    string DeviceName = 2;//设备名(OSD信息)
+    string FirmwareVersion = 3;//固件版本信息
+    string FirmwareMD5 = 4;//固件文件MD5码
+    string SoftwareVersion = 5;//软件版本信息
+    string SoftwareMD5 = 6;//软件文件MD5码
+}
+message CloudStorageInfoChangeNotify{
+    string DeviceID = 1;//设备ID
+    int32 CloudStorageType = 2;//云存类型(0:不云存,1:全天存储,2:动态存储)
+    int32 StreamType = 3;//码流类型(0:主码流,1:辅码流,2:第三码流)
+    int32 PreStorageTime = 4;//动态存储使用-预存时间(秒) 0-10
+    int32 KeepTime = 5;//动态存储使用-存储持续时间(秒)30-300
+}
+message Pong{
+    int32 Code = 1;//响应消息
+    string Message = 2;//响应代码
+}
+message RegisterResponseWithNonce{
+    int32 Code = 1;//响应代码
+    string Message = 2;//响应消息
+    string nonce = 3;//验证随机数
+}
+message GetCloudStorageAddrRequest{
+    string DeviceID = 1;//设备ID
+    string CloudStorageType = 2;//云存类型(1:全天存储,2:动态存储)
+    int32 StreamType = 3;//码流类型(0:主码流,1:辅码流,2:第三码流)
+    int32 PreStorageTime = 4;//动态存储使用-预存时间(秒) 0-10
+    int32 KeepTime = 5;//动态存储使用-存储持续时间(秒)30-300
+    string StreamDesc = 6;//RTP/AVP/TCP PS/90000
+    int64 StartTime = 7;//开始时间
+
+}
+message CloudStorageEndNotify{
+    string DeviceID = 1;//设备ID
+    string TaskID = 2;//任务ID
+    int64 StartTime = 3;//开始时间
+    int64 EndTime = 4;//结束时间
+}
+message GetCloudStorageInfoRequest{
+    string DeviceID = 1;//设备ID
+    int64 Time = 2;//请求时间
+}
+message GetCloudStorageInfoResponse{
+    int32 Code = 1;//响应消息
+    string Message = 2;//响应代码
+    int32 CloudStorageType = 3;//云存类型(0:不云存,1:全天存储,2:动态存储)
+    int32 StreamType = 4;//码流类型(0:主码流,1:辅码流,2:第三码流)
+    int32 PreStorageTime = 5;//动态存储使用-预存时间(秒) 0-10
+    int32 KeepTime = 6;//动态存储使用-存储持续时间(秒)30-300
+}
+message RegisterRequest{
+    string DeviceID = 1;//设备ID
+    int64 RegisterTime = 2;//注册时间戳
+}
+message DeviceUpdateRequest{
+    int32 UpdateType = 1;//更新类型(0:固件;1:软件)
+    string wareURL = 2;//文件存放路径
+    string wareVersion = 3;//文件版本
+    string wareMD5 = 4;//文件MD5值
+    string TaskID = 5;//本次升级任务ID
+}
+message DeviceUpdateNotify{
+    int32 UpdateType = 1;//更新类型(0:固件;1:软件)
+    string TaskID = 2;//升级任务ID
+    string wareVersion = 3;//文件版本
+    string wareMD5 = 4;//文件MD5值
+    int64 UpdateTime = 5;//升级时间
+}
+message Ping{
+    int64 Time = 1;//当前时间
+}
+message FromatSDCardRequest{
+    int32 Date = 1;//Unix时间-东八区
+}
+message RegisterResponse{
+    int32 Code = 1;//响应消息
+    string Message = 2;//响应代码
+}
+message GetSDCardInfoRequest{
+    repeated int64 Date = 1;//Unix时间-东八区
+}
+message FromatSDCardStatNotify{
+    int32 FromatSDCardStat = 1;//格式化状态   200:格式化完成   400:格式化错误
+    string Message = 2;//响应代码;
+}
+message DownLoadStatRequest{
+    int32 DownLoadStat = 1;//下载状态  200：成功   4xx：失败
+    string Message = 2;//描述
+}
+message UploadDeviceInfoResponse{
+    int32 Code = 1;//响应消息
+    string Message = 2;//响应代码
+}
+message DeviceUpdateResponse{
+    int32 Code = 1;//响应消息
+    string Message = 2;//响应消息
+}
+message RegisterRequestWithAuth{
+    string DeviceID = 1;//设备ID
+    int64 RegisterTime = 2;//注册时间
+    string Auth = 3;//验证信息
+    int32 PingSpan = 4;//心跳间隔时间
+}
+message GetSDCardInfoResponse{
+    int32 Code = 1;//响应消息
+    string Message = 2;//响应代码
+    int32 SDStat = 3;//0无卡;1有卡未初始化;3有卡已初始化
+    int32 SDCardSize = 4;//单位(GB)
+    int32 SDCardAvailableSize = 5;//可用空间(MB)
+    int32 SDCardUsedSize = 6;//单位(MB)
+}
+message OperateResponse{
+    int32 Code = 1;//响应消息
+    string Message = 2;//响应代码
+}
+message GetCloudStorageAddrResponse{
+    int32 Code = 1;//Code响应消息
+    string Message = 2;//响应代码
+    int32 SSRC = 3;//RTP SSRC
+    string AddrIP = 4;//云存服务IP
+    int32 AddrPort = 5;//云存服务端口
+    int32 TransType= 6;//传输类型(0:TCP,1:HTTP,2:TCP+TLS,3:HTTPS)
+    string TaskID = 7;//任务ID
+}

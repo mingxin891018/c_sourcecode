@@ -153,31 +153,30 @@ int main(int argc, char **argv) {
 		//ShowCerts(ssl);
 
 		/* 开始处理每个新连接上的数据收发 */
+
+		/* 发消息给客户端 */
 		bzero(buf, MAXBUF + 1);
 		strcpy(buf, "server->client");
-		/* 发消息给客户端 */
 		len = SSL_write(ssl, buf, strlen(buf));
 
 		if (len <= 0) {
-			printf("消息'%s'发送失败！错误代码是%d，错误信息是'%s'\n", buf, errno,
-					strerror(errno));
+			printf("消息'%s'发送失败！错误代码是%d，错误信息是'%s'\n", buf, errno, strerror(errno));
 			goto finish;
 		} else
 			printf("消息'%s'发送成功，共发送了%d个字节！\n", buf, len);
-		
-		while(1){
-			bzero(buf, MAXBUF + 1);
-			/* 接收客户端的消息 */
-			len = SSL_read(ssl, buf, MAXBUF);
-			if (len > 0)
-				printf("接收消息成功:'%s'，共%d个字节的数据\n", buf, len);
-			else{
-				printf("消息接收失败！错误代码是%d，错误信息是'%s'\n", errno, strerror(errno));
-				ERR_print_errors_fp(stdout);
-				goto finish;
-			}
-			/* 处理每个新连接上的数据收发结束 */
+#if 0
+		/* 接收客户端的消息 */
+		bzero(buf, MAXBUF + 1);
+		len = SSL_read(ssl, buf, MAXBUF);
+		if (len > 0)
+			printf("接收消息成功:'%s'，共%d个字节的数据\n", buf, len);
+		else{
+			printf("消息接收失败！错误代码是%d，错误信息是'%s'\n", errno, strerror(errno));
+			ERR_print_errors_fp(stdout);
+			goto finish;
 		}
+#endif
+		/* 处理每个新连接上的数据收发结束 */
 finish:
 		/* 关闭 SSL 连接 */
 		SSL_shutdown(ssl);

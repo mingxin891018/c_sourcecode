@@ -31,6 +31,9 @@ md5_test_string:
 ecdsa:
 	make -C ecdsa
 
+dh_test:
+	cc dh_test.c $(INDIR) $(DYN_LDS_WITH) -lcrypto -o dh_test -Wall
+
 clean:
 	rm -rf aes_test rsa_test rsa_test 3des_test des_test base64_test hmac_test md5_test_string
 	make -C ecdsa clean

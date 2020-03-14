@@ -227,16 +227,21 @@ int DecodeBase64W(const wchar_t* pData, unsigned int nCount, unsigned char** ppR
 
 void main(void)
 {
-	char *data = "ABCDEFGHIJKLMN";
+	unsigned char data[] = {0x8f, 0x5c, 0x6a, 0xf7, 0x5e, 0x02, 0xf8, 0x52, 0xba, 0x22, 0x9f, 0xcb, 0x75, 0x74, 0xab, 0x3f };
 
-	char *base = EncodeBase64(data, strlen(data));
+	char *base = EncodeBase64(data, sizeof(data));
 
 	unsigned char *p; 
-	DecodeBase64(base, strlen(base), &p);
+	int ret = DecodeBase64(base, strlen(base), &p);
 
-	printf("DATA     = %s\n", data);
+	int i = 0;
+	for(i = 0; i < sizeof(data); i++)
+		printf("%02X ", data[i]);
+	printf("\n");
 	printf("BASE64   = %s\n", base);
-	printf("DE BASE64= %s\n", p); 
+	for(i = 0; i < ret; i++)
+		printf("%02X ", p[i]);
+	printf("\n");
 
 	free(p);
 	free(base);

@@ -164,6 +164,7 @@ int dh_get_pg(DH *dh, unsigned char **dh_p, int *dh_p_len, unsigned char **dh_g,
 	memset(tmp_dh_p, 0, tmp_dh_p_length);
 	//BN_bn2bin转换后的值是把高位0去掉的， 输出的字节长度不一定就是二进制数据的字节数，一定不能忽视。
 	ret = BN_bn2bin(bn_dh_p, tmp_dh_p);
+	log_info("dh_p_len=%d, bn_dh_p_len=%d!\n", tmp_dh_p_length, ret);
 	*dh_p = tmp_dh_p;
 	*dh_p_len = tmp_dh_p_length;
 
@@ -178,7 +179,6 @@ int dh_get_pg(DH *dh, unsigned char **dh_p, int *dh_p_len, unsigned char **dh_g,
 	memset(tmp_dh_g, 0, tmp_dh_g_length);
 	//BN_bn2bin转换后的值是把高位0去掉的， 输出的字节长度不一定就是二进制数据的字节数，一定不能忽视。
 	ret = BN_bn2bin(bn_dh_g, tmp_dh_g);
-	log_info("dh_p_len=%d, bn_dh_p_len=%d!\n", tmp_dh_p_length, ret);
 	log_info("dh_g_len=%d, bn_dh_g_len=%d,g=%d!\n", tmp_dh_g_length, ret, tmp_dh_g[0]);
 	*dh_g = tmp_dh_g;
 	*dh_g_len = tmp_dh_g_length;

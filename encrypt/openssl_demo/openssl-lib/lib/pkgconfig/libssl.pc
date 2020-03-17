@@ -1,4 +1,4 @@
-prefix=/home/zhaomingxin/github/c_sourcecode/priv_test/openssl_test/crypto_demo/openssl-lib
+prefix=/home/zhaomingxin/github/c_sourcecode/encrypt/openssl_demo/openssl-lib
 exec_prefix=${prefix}
 libdir=${exec_prefix}/lib
 includedir=${prefix}/include

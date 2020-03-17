@@ -40,8 +40,11 @@ ecdh_test:
 ecdsa_test:
 	cc ecdsa_test.c $(INDIR) $(DYN_LDS_WITH) -lcrypto -o ecdsa_test -Wall
 
+dsa_test:
+	cc dsa_test.c $(INDIR) $(DYN_LDS_WITH) -lcrypto -o dsa_test -Wall
+
 clean:
-	rm -rf aes_test rsa_test rsa_test 3des_test des_test base64_test hmac_test md5_test_string dh_test ecdh_test ecdsa_test
+	rm -rf aes_test rsa_test rsa_test 3des_test des_test base64_test hmac_test md5_test_string dh_test ecdh_test ecdsa_test dsa_test
 	make -C ecdsa clean
 
 

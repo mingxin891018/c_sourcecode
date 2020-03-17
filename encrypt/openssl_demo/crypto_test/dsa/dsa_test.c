@@ -36,20 +36,35 @@ int dsa_create_key(void)
 	// Generate DSA keys
 	DSA_generate_key(dsa);
 
-	i2d_DSAPublicKey(dsa, &pub);
-	i2d_DSAPrivateKey(dsa, &priv);
+	ret = i2d_DSAPublicKey(dsa, &pub);
+	log_info("pubkey:\n");
+	bin_print(pub, ret);
+	ret = i2d_DSAPrivateKey(dsa, &priv);
+	log_info("privkey:\n");
+	bin_print(priv, ret);
 
 
 DSA_END:
+	if(pub)
+		free(pub);
+	if(priv)
+		free(priv);
 	return ret;
 }
+
+
+static unsigned char seed[20] = {
+	0xd5, 0x01, 0x4e, 0x4b, 0x60, 0xef, 0x2b, 0xa8, 0xb6, 0x21, 0x1b, 0x40,
+	0x62, 0xba, 0x32, 0x24, 0xe0, 0x42, 0x7d, 0xd3,
+};
 
 int dsa_test(int argc, char** argv) {
 	DSA* dsa;
 	unsigned char* input_string;
 	unsigned char* sign_string;
 	unsigned int sig_len;
-	unsigned int i;
+	unsigned int i, counter;
+	unsigned long h;
 
 	// check usage
 	if (argc != 2) {
@@ -67,7 +82,12 @@ int dsa_test(int argc, char** argv) {
 	strncpy((char*)input_string, argv[1], strlen(argv[1]));
 
 	// Generate random DSA parameters with 1024 bits 
+#if 1
 	dsa = DSA_generate_parameters(1024, NULL, 0, NULL, NULL, NULL, NULL);
+#else
+	dsa = DSA_new();
+	int ret=DSA_generate_parameters_ex(dsa, 512,seed, 20, &counter,&h,NULL);
+#endif
 
 	// Generate DSA keys
 	DSA_generate_key(dsa);

@@ -222,6 +222,11 @@ int dh_set_pg(DH *dh, const unsigned char *dh_p, int dh_p_len, const unsigned ch
 	ret = 0;
 
 ERR_END:
+	if(bn_dh_p)
+		 BN_free(bn_dh_p);
+	if(bn_dh_g)
+		 BN_free(bn_dh_g);
+
 	return ret;
 }
 
@@ -322,6 +327,8 @@ int dh_get_sharekey(DH *dh, const unsigned char *pubkey, int pubkey_len, unsigne
 	return 0;
 
 ERR_END:
+	if(bn_pubkey)
+		 BN_free(bn_pubkey);
 	if(*sharekey)
 		free(*sharekey);
 	*sharekey = NULL;
